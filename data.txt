@@ -1,0 +1,24 @@
+- create folders frontend & backend
+- cd backend -> npm init
+- npm i express dotenv cors
+- npm i socket.io @prisma/client
+- npm install -D typescript ts-node-dev prisma @types/node @types/express
+- setup scripts in package.json
+- npx tsc --init
+- setup tsconfig.json
+- npx prisma init
+- npx prisma migrate dev --name init
+- npm i zod
+
+- why not to setup prisma inside src - prima migration always look for prisma/schema.prisma 
+Keeping schema.prisma inside src/ makes migrations/config messy.
+
+
+
+//now lets setup frontend in nextjs
+- npx create-next-app@latest
+- npm install @reduxjs/toolkit react-redux
+- npx shadcn@latest init
+- npx shadcn@latest add
+
+

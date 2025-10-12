@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String    @id @default(uuid())
+  name                    String
+  email                   String    @unique
+  password                String
+  role                    String?
+  profilePicture          String?
+  isEmailverified         Boolean   @default(false)
+  lastLogin               DateTime?
+  is2FAenabled            Boolean   @default(false)
+  twoFAotp                String?
+  twoFAotpExpires         DateTime?
+  refreshToken            String?
+  passwordResetOtp        String?
+  passwordResetOtpExpires DateTime?
+
+  ownedWorkspaces WorkSpace[] @relation("WorkspaceOwner")
+  workspaces WorkspaceMembers[]
+  tasks Task[]
+  activities Activity[]
+  comments Comment[]
+  subscription Subscription?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WorkSpace {
+  id          String             @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  owner User @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     WorkspaceMembers[]
+  projects    Project[]
+  inviteCode  String  @unique @default(cuid())
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum AccessLevel {
+  OWNER
+  MEMBER
+  VIEWER
+}
+
+model WorkspaceMembers {
+  id            String @id @default(uuid())
+  userId        String
+  User          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId   String
+  workspace     WorkSpace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  accessLevel   AccessLevel     @default(MEMBER)
+  projectAccess ProjectAccess[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, workspaceId])
+
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+model Project{
+  id String @id @default(uuid())
+  name  String
+  description String?
+  workspaceId  String
+  workspace  WorkSpace @relation(fields: [workspaceId],references: [id],onDelete:Cascade)
+
+  tasks Task[]
+  activities  Activity[]
+  comments  Comment[]
+  projectAccess  ProjectAccess[]
+  documentation  Documentation[]
+  files File[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model ProjectAccess{
+  id String @id @default(uuid())
+  workspaceMemberId String
+  workspaceMember WorkspaceMembers @relation(fields: [workspaceMemberId],references: [id],onDelete: Cascade)
+  projectId String
+  project Project @relation(fields: [projectId],references: [id],onDelete: Cascade)
+
+  hasAccess Boolean @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([workspaceMemberId,projectId])
+
+  @@index([workspaceMemberId])
+  @@index([projectId])
+}
+
+enum TaskStatus{
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  IN_REVIEW
+  BACKLOG
+}
+
+enum TaskPriority{
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Task{
+  id String @id @default(uuid())
+  title  String
+  description  String?
+  status  TaskStatus @default(TODO)
+  priority  TaskPriority @default(LOW)
+  startDate DateTime?
+  dueDate DateTime?
+
+  position Int
+  projectId String
+  project Project @relation(fields: [projectId],references: [id],onDelete: Cascade)
+
+  assigneeId  String?
+  assignedTo  User? @relation(fields: [assigneeId],references: [id],onDelete: SetNull)
+
+  attachments File[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([assigneeId])
+}
+
+model Activity{
+  id String @id @default(uuid())
+  type String
+  description String
+  projectId String
+  project Project @relation(fields: [projectId],references: [id],onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model Comment{
+  id String @id @default(uuid())
+  content String
+  projectId  String
+  project Project @relation(fields: [projectId],references: [id],onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model Documentation{
+  id String @id @default(uuid())
+  projectId String @unique
+  project Project @relation(fields: [projectId],references: [id],onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  updatedBy String?
+}
+
+enum FileType{
+  image
+  pdf
+}
+
+model File{
+  id String @id @default(uuid())
+  name String
+  url String
+  taskId String?
+  projectId String?
+  type FileType
+  task Task? @relation(fields: [taskId],references: [id],onDelete: Cascade)
+  project Project? @relation(fields: [projectId],references: [id],onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+enum SubscriptionPlan{
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus{
+  ACTIVE 
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+model Subscription {
+  id String @id @default(uuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Subscription details
+  plan SubscriptionPlan @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+  frequency String @default("monthly") // monthly/yearly
+  
+  // Razorpay specific fields
+  razorpayCustomerId String?
+  razorpaySubscriptionId String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  
+  // Subscription lifecycle
+  currentPeriodEnd DateTime?
+  cancelAtPeriodEnd Boolean @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

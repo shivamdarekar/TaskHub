@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    /* File Layout */
+    "rootDir": "./src",              // Your TS source code
+    "outDir": "./dist",              // Compiled JS goes here
+
+    /* Module System */
+    "module": "commonjs",            // Still compiles to CJS (Node-friendly)
+    "target": "ES2020",              // Modern JS target
+    "moduleResolution": "node",      // Resolve node_modules correctly
+    "esModuleInterop": true,         // Lets you use `import express from "express";`
+
+    /* Environment */
+    "lib": ["esnext"],               // Latest JS features
+    "types": ["node"],               // Node.js global types
+
+    /* Output Options */
+    "sourceMap": true,               // For debugging in TS
+    "declaration": true,             // Generate .d.ts files
+
+    /* Type Checking */
+    "strict": true,                  // Enable strict mode
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,             // Skip type check of node_modules
+
+    "forceConsistentCasingInFileNames": true    //This ensures no issues when deploying to Linux
+  },
+  "include": ["src/**/*", "src/types/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
