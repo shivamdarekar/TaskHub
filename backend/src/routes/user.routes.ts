@@ -17,6 +17,7 @@ import {
   logoutUser,
   toggle2FA,
   verify2FA,
+  fetchCurrentUser,
 } from "../controllers/user.controller";
 import { verifyJWT } from "../middleware/auth.middleware";
 
@@ -43,5 +44,7 @@ router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
 router.post("/toggle-2fa", verifyJWT, validate(toggle2FASchema), toggle2FA);
 
 router.post("/logout", verifyJWT, logoutUser);
+
+router.get("/me", verifyJWT, fetchCurrentUser);
 
 export default router;

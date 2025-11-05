@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useAppSelector } from "@/redux/hooks";
+import { Loader2 } from "lucide-react"; // add
 import {
   Card,
   CardContent,
@@ -9,13 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Check,
-  Users,
-  Layers,
-  BarChart3,
-  ArrowRight,
-} from "lucide-react";
+import { Check, Users, Layers, BarChart3, ArrowRight } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -24,13 +21,24 @@ import {
 } from "@/components/ui/accordion";
 
 export default function Home() {
-  // Replace with your actual auth logic
-  const isLoggedIn = false;
+  const { isAuthenticated, authLoading } = useAppSelector(
+    (state) => state.auth
+  );
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted || authLoading) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-500" aria-hidden="true" />
+      <span className="sr-only" role="status" aria-live="polite">Loading</span>
+    </div>
+  );
+}
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-
       {/* Hero Section */}
       <section className="py-18 sm:py-24 text-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,28 +55,34 @@ export default function Home() {
           </p>
 
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            {isLoggedIn ? (
-              <Button
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8"
-              >
-                <Link href="/dashboard">Go to Workspace</Link>
-              </Button>
-            ) : (
-              <>
+            {isAuthenticated ? (
+              <Link href="/dashboard">
                 <Button
                   size="lg"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                 >
-                  <Link href="/register">Start for Free</Link>
+                  Go to Workspace
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-gray-300"
-                >
-                  <Link href="/demo">Watch Demo</Link>
-                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/register">
+                  <Button
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  >
+                    Start for Free
+                  </Button>
+                </Link>
+                <Link href="/demo">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-gray-300"
+                  >
+                    Watch Demo
+                  </Button>
+                </Link>
               </>
             )}
           </div>
@@ -126,8 +140,8 @@ export default function Home() {
                 Customizable Workflow
               </h3>
               <p className="text-gray-600">
-                Personalize your workspace with flexible tools designed to
-                match your unique work style.
+                Personalize your workspace with flexible tools designed to match
+                your unique work style.
               </p>
             </div>
           </div>
@@ -138,7 +152,9 @@ export default function Home() {
       <section id="pricing" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900">Available Plans</h2>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Available Plans
+            </h2>
             <p className="mt-4 text-gray-600">
               Choose the perfect plan for your needs
             </p>
@@ -232,7 +248,9 @@ export default function Home() {
       {/* FAQ Section */}
       <section id="faq" className="bg-gray-50 py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-10">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-bold mb-10">
+            Frequently Asked Questions
+          </h2>
           <Accordion type="single" collapsible className="text-left">
             <AccordionItem value="item-1">
               <AccordionTrigger>Is TaskHub free to use?</AccordionTrigger>
@@ -243,7 +261,9 @@ export default function Home() {
             </AccordionItem>
 
             <AccordionItem value="item-2">
-              <AccordionTrigger>Can I use TaskHub with my team?</AccordionTrigger>
+              <AccordionTrigger>
+                Can I use TaskHub with my team?
+              </AccordionTrigger>
               <AccordionContent>
                 Absolutely! Invite teammates to collaborate on projects and
                 share progress in real time.
@@ -261,10 +281,12 @@ export default function Home() {
             </AccordionItem>
 
             <AccordionItem value="item-4">
-              <AccordionTrigger>How can I cancel or upgrade my plan?</AccordionTrigger>
+              <AccordionTrigger>
+                How can I cancel or upgrade my plan?
+              </AccordionTrigger>
               <AccordionContent>
-                You can manage, upgrade, or cancel your subscription anytime from
-                your account dashboard.
+                You can manage, upgrade, or cancel your subscription anytime
+                from your account dashboard.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

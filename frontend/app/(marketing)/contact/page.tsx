@@ -45,9 +45,7 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* Navigation */}
      
-
       {/* Header */}
       <header className="text-center py-16 bg-gradient-to-b from-gray-50 to-white">
         <h1 className="text-4xl font-bold text-gray-900">Get in Touch</h1>
@@ -57,7 +55,7 @@ export default function ContactPage() {
       </header>
 
       {/* Contact Section */}
-      <main className="max-w-7xl mx-auto flex-grow py-12 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto flex-grow py-4 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Contact Info */}
           <aside className="space-y-8">

@@ -493,6 +493,48 @@ const logoutUser = asyncHandler(async (req:Request, res: Response) => {
     .json(new ApiResponse(200, {}, "User logout successfully"))
 });
 
+
+//fetch curent user
+const fetchCurrentUser = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ApiError(401, "Not Authorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isEmailverified: true,
+      is2FAenabled: true,
+      profilePicture: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  const safeUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    profilePicture: user.profilePicture ?? null,
+    isEmailVerified: user.isEmailverified,
+    is2FAenabled: user.is2FAenabled,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user: safeUser }, "Current user fetched successfully"));
+});
+
 //todo
 //resend otp
 //change password
@@ -510,5 +552,6 @@ export {
   resetPassword,
   logoutUser,
   toggle2FA,
-  verify2FA
+  verify2FA,
+  fetchCurrentUser
 };

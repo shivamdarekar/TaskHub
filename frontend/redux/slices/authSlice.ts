@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
-import { AxiosError } from "axios";
+import { handleAxiosError } from "../api/axiosError";
 
 interface User {
   id: string;
@@ -46,20 +46,6 @@ const initialState: AuthState = {
   error: null,
   isAuthenticated: false,
 };
-
-const handleAxiosError = (error: unknown, defaultMessage: string): string => {
-  // If it's an Axios error
-  if (error instanceof AxiosError) {
-    return error.response?.data?.message || defaultMessage;
-  }
-  // If it's any other error with a message property
-  if (error instanceof Error) {
-    return error.message || defaultMessage;
-  }
-  // Default fallback
-  return defaultMessage;
-};
-
 
 //fetch current user
 export const fetchCurrentUser = createAsyncThunk(
@@ -247,7 +233,8 @@ const authSlice = createSlice({
         if (action.payload.requiresTwoFA) {
           // Don't set user yet, wait for 2FA verification
           state.error = null;
-        } else {
+        }
+        else {
           state.user = action.payload;
           state.isAuthenticated = true;
         }

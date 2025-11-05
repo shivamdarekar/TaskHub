@@ -9,6 +9,7 @@ import Link from "next/link";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { loginUser, verify2FA, clearError } from "@/redux/slices/authSlice";
+import {fetchUserWorkspaces} from "@/redux/slices/workspaceSlice";
 
 interface LoginResponse {
   requiresTwoFA: boolean;
@@ -21,6 +22,7 @@ interface LoginResponse {
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+
   const { loading, error, isAuthenticated } = useAppSelector(
     (state) => state.auth
   );
@@ -36,10 +38,28 @@ export default function LoginPage() {
     email: "",
     otp: "",
   });
+  const [isCheckingWorkspaces,setIsCheckingWorkspaces] = useState(false);
+
+  //handle navigation after authentication
+  const handlePostLoginNavigation = async () => {
+    setIsCheckingWorkspaces(true);
+    try{
+      const result = await dispatch(fetchUserWorkspaces()).unwrap();
+      if (result.length == 0) {
+        router.push("/workspaces/create")
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Failed to fetch workspaces",err);
+    } finally {
+      setIsCheckingWorkspaces(false);
+    }
+  };
 
   useEffect(() => {
-    if (isAuthenticated && !requires2FA) {
-      router.push("/dashboard");
+    if (isAuthenticated && !requires2FA && !isCheckingWorkspaces) {
+      handlePostLoginNavigation();
     }
   }, [isAuthenticated, router, requires2FA]);
 
@@ -62,7 +82,7 @@ export default function LoginPage() {
     const result = await dispatch(loginUser(formData)).unwrap();
     const payload = result as LoginResponse;
 
-    if (payload.requiresTwoFA) {
+    if (payload && payload.requiresTwoFA) {
       setRequires2FA(true);
       setTwoFAData({
         twoFAToken: payload.twoFAToken,
@@ -71,11 +91,9 @@ export default function LoginPage() {
       });
       return;
     }
-
-    router.push("/dashboard");
+    
   } catch (err) {
     // error is already set in redux slice via rejectWithValue
-    // You can also show toast here if needed
     console.error("Login failed:", err);
   }
 };
@@ -83,13 +101,23 @@ export default function LoginPage() {
   const handle2FASubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = await dispatch(verify2FA(twoFAData));
-
-    if (verify2FA.fulfilled.match(result)) {
-      router.push("/dashboard");
-    }
-    // If rejected, Redux error state updates, and the <p>{error}</p> block will show
+    const result = await dispatch(verify2FA(twoFAData)).unwrap();
+    setRequires2FA(false);
   };
+
+  // show loading if checking workspaces
+  if (isCheckingWorkspaces) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Setting up your workspace...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (requires2FA) {
     return (
