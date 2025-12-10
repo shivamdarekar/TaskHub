@@ -26,6 +26,11 @@ export const resetPasswordSchema = z.object({
     path: ["confirmPassword"]
 });
 
+export const createWorkspaceSchema = z.object({
+    name: z.string().min(1, { message: "Workspace name is required" }).trim(),
+    description: z.string().optional().or(z.literal(""))
+});
+
 
 export const toggle2FASchema = z.object({
     password: z.string().min(1, "Password is required")

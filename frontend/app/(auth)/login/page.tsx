@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2, CheckCircle2, LayoutGrid } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { loginUser, verify2FA, clearError } from "@/redux/slices/authSlice";
 import {fetchUserWorkspaces} from "@/redux/slices/workspaceSlice";
+import AuthNavbar from "@/components/AuthNavbar";
 
 interface LoginResponse {
   requiresTwoFA: boolean;
@@ -46,9 +47,9 @@ export default function LoginPage() {
     try{
       const result = await dispatch(fetchUserWorkspaces()).unwrap();
       if (result.length == 0) {
-        router.push("/workspaces/create")
+        router.push("/workspace/create")
       } else {
-        router.push("/dashboard");
+        router.push(`/workspace/${result[0].id}`);
       }
     } catch (err) {
       console.error("Failed to fetch workspaces",err);
@@ -61,7 +62,7 @@ export default function LoginPage() {
     if (isAuthenticated && !requires2FA && !isCheckingWorkspaces) {
       handlePostLoginNavigation();
     }
-  }, [isAuthenticated, router, requires2FA]);
+  }, [isAuthenticated, requires2FA]);
 
   useEffect(() => {
     // Clear error when component unmounts
@@ -108,12 +109,14 @@ export default function LoginPage() {
   // show loading if checking workspaces
   if (isCheckingWorkspaces) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">Setting up your workspace...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="text-center animate-fade-in-up">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse shadow-lg">
+            <LayoutGrid className="h-8 w-8 text-white" />
           </div>
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-900 font-semibold text-lg">Setting up your workspace...</p>
+          <p className="text-gray-500 text-sm mt-2">This will only take a moment</p>
         </div>
       </div>
     );
@@ -121,27 +124,33 @@ export default function LoginPage() {
 
   if (requires2FA) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 border border-gray-100">
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        
+        <div className="w-full max-w-md relative z-10 animate-fade-in-up">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-200">
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <CheckCircle2 className="h-7 w-7 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">
                 Two-Factor Authentication
               </h2>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-gray-600 mt-2 text-center">
                 Enter the 6-digit code sent to your email
               </p>
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-md">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-shake">
                 <p className="text-red-800 text-sm">{error}</p>
               </div>
             )}
 
             <form onSubmit={handle2FASubmit} className="space-y-5">
               <div>
-                <Label htmlFor="otp" className="text-gray-700 mb-1.5 block">
+                <Label htmlFor="otp" className="text-gray-700 font-medium mb-2 block text-center">
                   Verification Code
                 </Label>
                 <Input
@@ -155,19 +164,19 @@ export default function LoginPage() {
                   placeholder="000000"
                   maxLength={6}
                   disabled={loading}
-                  className="text-center text-2xl tracking-widest"
+                  className="text-center text-2xl tracking-widest h-14 font-semibold transition-all focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
                 disabled={loading || twoFAData.otp.length !== 6}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Verifying...
                   </>
                 ) : (
@@ -182,7 +191,7 @@ export default function LoginPage() {
                   setTwoFAData({ twoFAToken: "", email: "", otp: "" });
                   dispatch(clearError());
                 }}
-                className="text-sm text-blue-600 hover:underline w-full text-center"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium w-full text-center transition-colors"
               >
                 Back to login
               </button>
@@ -194,18 +203,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 border border-gray-100">
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Sign in to your account
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
+      <AuthNavbar />
+
+      {/* Animated Background */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+      
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="w-full max-w-md relative z-10 animate-fade-in-up">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-200">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Welcome back
             </h2>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-gray-600 mt-2">
               New to TaskHub?{" "}
               <Link
                 href="/register"
-                className="text-blue-600 hover:underline font-medium"
+                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
               >
                 Create an account
               </Link>
@@ -213,14 +229,14 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-md">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-shake">
               <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="email" className="text-gray-700 mb-1.5 block">
+              <Label htmlFor="email" className="text-gray-700 font-medium mb-2 block">
                 Email Address
               </Label>
               <Input
@@ -230,19 +246,20 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                disabled={loading}
+                disabled={loading || isCheckingWorkspaces}
+                className="h-11 transition-all focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <Label htmlFor="password" className="text-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="password" className="text-gray-700 font-medium">
                   Password
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -255,19 +272,19 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  disabled={loading}
-                  className="pr-10"
+                  disabled={loading || isCheckingWorkspaces}
+                  className="pr-10 h-11 transition-all focus:ring-2 focus:ring-blue-500"
                   required
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOffIcon className="w-4 h-4" />
+                    <EyeOffIcon className="w-5 h-5" />
                   ) : (
-                    <EyeIcon className="w-4 h-4" />
+                    <EyeIcon className="w-5 h-5" />
                   )}
                 </button>
               </div>
@@ -275,19 +292,20 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5"
-              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+              disabled={loading || isCheckingWorkspaces}
             >
-              {loading ? (
+              {loading || isCheckingWorkspaces ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {isCheckingWorkspaces ? "Loading workspace..." : "Signing in..."}
                 </>
               ) : (
                 "Sign in"
               )}
             </Button>
           </form>
+          </div>
         </div>
       </div>
     </div>

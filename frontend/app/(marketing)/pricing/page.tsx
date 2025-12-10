@@ -17,9 +17,9 @@ export default function PricingPage() {
       
 
       {/* Header */}
-      <header className="bg-gradient-to-b from-gray-50 to-white py-16 text-center px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-gray-900">Transparent Pricing for Every Need</h1>
-        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+      <header className="bg-gradient-to-b from-blue-50 to-white py-16 text-center px-4 sm:px-6 lg:px-8">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 animate-fade-in-up">Transparent Pricing for Every Need</h1>
+        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto animate-fade-in-up animation-delay-200">
           Choose the plan that fits your workflow and scale as you grow.
         </p>
       </header>
@@ -28,7 +28,7 @@ export default function PricingPage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Plan */}
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="border-gray-200 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 animate-fade-in-up">
             <CardHeader>
               <CardTitle className="text-2xl font-semibold">Free</CardTitle>
               <div className="mt-4">
@@ -60,7 +60,7 @@ export default function PricingPage() {
           </Card>
 
           {/* Pro Plan */}
-          <Card className="relative border-2 border-blue-200 shadow-md">
+          <Card className="relative border-2 border-blue-200 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 animate-fade-in-up animation-delay-200">
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
                 Most Popular
@@ -94,14 +94,14 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-blue-900 hover:bg-blue-800 text-white">
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all">
                 Upgrade
               </Button>
             </CardFooter>
           </Card>
 
           {/* Enterprise Plan */}
-          <Card className="border-gray-200 shadow-sm md:col-span-2 max-w-md mx-auto">
+          <Card className="border-gray-200 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 md:col-span-2 max-w-md mx-auto animate-fade-in-up animation-delay-400">
             <CardHeader>
               <CardTitle className="text-2xl font-semibold">Enterprise</CardTitle>
               <div className="mt-4">
@@ -129,7 +129,7 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-blue-900 hover:bg-blue-800 text-white">
+              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all">
                 Upgrade
               </Button>
             </CardFooter>
@@ -138,9 +138,9 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="bg-gray-50 py-16 px-4 sm:px-6 lg:px-8">
+      <section className="bg-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-10">Frequently Asked Questions</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-10 animate-fade-in-up">Frequently Asked Questions</h2>
           <Accordion type="single" collapsible className="text-left">
             <AccordionItem value="item-1">
               <AccordionTrigger>Can I cancel my subscription anytime?</AccordionTrigger>

@@ -228,6 +228,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.authLoading = false;
 
         // Check if 2FA is required
         if (action.payload.requiresTwoFA) {
@@ -252,6 +253,7 @@ const authSlice = createSlice({
       })
       .addCase(verify2FA.fulfilled, (state, action) => {
         state.loading = false;
+        state.authLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
         state.error = null;

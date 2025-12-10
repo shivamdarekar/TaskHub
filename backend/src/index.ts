@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 
 import userRoutes from "./routes/user.routes";
 import workspaceRoutes from "./routes/workspace.routes";
+import projectRoutes from "./routes/project.routes"
 import { errorHandler } from "./middleware/errorHandler";
 
 
@@ -23,6 +24,7 @@ app.use(cookieParser());
 //routes
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/workspace", workspaceRoutes);
+app.use("/api/v1/project", projectRoutes)
 
 app.use(errorHandler);
 

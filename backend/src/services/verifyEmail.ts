@@ -12,64 +12,140 @@ const createVerificationEmailTemplate = (userName: string, verificationLink: str
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Verify Your Email</title>
       <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-          font-family: Arial, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           line-height: 1.6;
-          color: #333;
-          max-width: 600px;
-          margin: 0 auto;
+          color: #1f2937;
+          background: #f3f4f6;
           padding: 20px;
         }
-        .container {
-          border: 1px solid #e1e1e1;
-          border-radius: 5px;
-          padding: 20px;
-          background-color: #f9f9f9;
+        .email-wrapper {
+          max-width: 480px;
+          margin: 0 auto;
+          background: #ffffff;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         .header {
+          background: #3b82f6;
+          padding: 20px;
           text-align: center;
-          padding-bottom: 10px;
-          border-bottom: 1px solid #e1e1e1;
-          margin-bottom: 20px;
+        }
+        .logo {
+          width: 40px;
+          height: 40px;
+          background: rgba(255, 255, 255, 0.15);
+          border-radius: 8px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 8px;
+        }
+        .logo-text {
+          color: #ffffff;
+          font-size: 18px;
+          font-weight: bold;
+        }
+        .header h1 {
+          color: #ffffff;
+          font-size: 20px;
+          font-weight: 600;
+          margin: 0;
+        }
+        .content {
+          padding: 20px;
+        }
+        .greeting {
+          font-size: 15px;
+          font-weight: 600;
+          color: #172b4d;
+          margin-bottom: 8px;
+        }
+        .message {
+          color: #5e6c84;
+          font-size: 14px;
+          line-height: 1.5;
+          margin-bottom: 16px;
+        }
+        .button-container {
+          text-align: center;
+          margin: 16px 0;
         }
         .button {
           display: inline-block;
-          background-color: #007bff;
-          color: white;
+          background: #3b82f6;
+          color: #ffffff;
           text-decoration: none;
-          padding: 10px 20px;
-          border-radius: 5px;
-          margin: 20px 0;
+          padding: 10px 24px;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 14px;
+        }
+        .info-box {
+          background: #f4f5f7;
+          padding: 10px 12px;
+          border-radius: 4px;
+          margin: 12px 0;
+        }
+        .info-box p {
+          color: #5e6c84;
+          font-size: 12px;
+          margin: 0;
         }
         .footer {
-          margin-top: 20px;
-          font-size: 12px;
+          background: #fafbfc;
+          padding: 16px;
           text-align: center;
-          color: #666;
+          border-top: 1px solid #dfe1e6;
+        }
+        .footer p {
+          color: #8993a4;
+          font-size: 11px;
+          margin: 4px 0;
+        }
+        .divider {
+          height: 1px;
+          background: #dfe1e6;
+          margin: 12px 0;
         }
       </style>
     </head>
     <body>
-      <div class="container">
+      <div class="email-wrapper">
         <div class="header">
-          <h2>TaskHub Email Verification</h2>
+          <div class="logo">
+            <span class="logo-text">TH</span>
+          </div>
+          <h1>Verify Your Email</h1>
         </div>
         
-        <p>Hello ${userName},</p>
-        
-        <p>Thank you for signing up for TaskHub. To complete your registration, please verify your email address by clicking the button below:</p>
-        
-        <div style="text-align: center;">
-          <a href="${verificationLink}" class="button">Verify Email Address</a>
+        <div class="content">
+          <p class="greeting">Hello ${userName},</p>
+          
+          <p class="message">
+            Welcome to TaskHub! Please verify your email address to complete your registration.
+          </p>
+          
+          <div class="button-container">
+            <a href="${verificationLink}" class="button">Verify Email Address</a>
+          </div>
+          
+          <div class="info-box">
+            <p><strong>Note:</strong> This link expires in 10 minutes.</p>
+          </div>
+          
+          <div class="divider"></div>
+          
+          <p class="message" style="font-size: 13px;">
+            If you didn't create an account, please ignore this email.
+          </p>
         </div>
-        
-        <p>This verification link will expire in 10 minutes.</p>
-        
-        <p>If you did not create an account, you can safely ignore this email.</p>
         
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} TaskHub. All rights reserved.</p>
-          <p>This is an automated email, please do not reply.</p>
+          <p style="margin-top: 8px;">This is an automated message, please do not reply.</p>
         </div>
       </div>
     </body>
