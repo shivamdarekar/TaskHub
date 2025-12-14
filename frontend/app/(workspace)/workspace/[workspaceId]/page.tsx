@@ -4,25 +4,26 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchWorkspaceOverview } from "@/redux/slices/workspaceSlice";
-import { Bell, Moon } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
+import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
 import StatsCards from "@/components/workspace/dashboard/StatsCards";
 import TaskStatusChart from "@/components/workspace/dashboard/TaskStatusChart";
 import TaskTrendChart from "@/components/workspace/dashboard/TaskTrendChart";
 import RecentMembers from "@/components/workspace/dashboard/RecentMembers";
 import RecentProjects from "@/components/workspace/dashboard/RecentProjects";
+import CreateProjectDialog from "@/components/workspace/CreateProjectDialog";
+import { useState } from "react";
 
 export default function WorkspaceDashboardPage() {
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const params = useParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const workspaceId = params.workspaceId as string;
 
   const { overview, overviewLoading, error } = useAppSelector((state) => state.workspace);
-  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (workspaceId) {
@@ -40,40 +41,30 @@ export default function WorkspaceDashboardPage() {
     );
   }
 
+  if (overviewLoading && !overview) {
   return (
-    <div className="flex-1 overflow-auto bg-gray-50">
-      {/* HEADER */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Home</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Monitor your workspace activities and projects
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-10 w-10">
-              <Moon className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-10 w-10">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-      </div>
+    <div className="flex items-center justify-center h-screen bg-gray-50">
+      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+    </div>
+  );
+}
+
+  return (
+    <div className="flex-1 overflow-auto bg-gray-50 animate-in fade-in-0 duration-500">
+      <WorkspaceNavbar 
+        title="Home" 
+        subtitle="Monitor your workspace activities and projects" 
+      />
 
       {/* MAIN CONTENT */}
       <div className="p-8 space-y-6">
         {/* STATS CARDS */}
-        <StatsCards stats={overview?.stats} loading={overviewLoading} />
+        <div className="animate-in slide-in-from-bottom-4 duration-700 delay-300">
+          <StatsCards stats={overview?.stats} loading={overviewLoading} />
+        </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
           <TaskStatusChart 
             data={overview?.stats?.taskByStatus} 
             loading={overviewLoading} 
@@ -82,7 +73,7 @@ export default function WorkspaceDashboardPage() {
         </div>
 
         {/* RECENT MEMBERS & PROJECTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-700">
           <RecentMembers 
             members={overview?.recentMembers} 
             loading={overviewLoading} 
@@ -91,11 +82,16 @@ export default function WorkspaceDashboardPage() {
             projects={overview?.recentProjects}
             loading={overviewLoading}
             workspaceId={workspaceId}
-            onCreateProject={() => router.push(`/workspace/${workspaceId}/projects/new`)}
+            onCreateProject={() => setCreateProjectOpen(true)}
             onProjectClick={(projectId) => router.push(`/workspace/${workspaceId}/projects/${projectId}`)}
           />
         </div>
       </div>
+      <CreateProjectDialog
+        open={createProjectOpen}
+        onOpenChange={setCreateProjectOpen}
+        workspaceId={workspaceId}
+      />
     </div>
   );
 }

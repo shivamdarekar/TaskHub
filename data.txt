@@ -22,3 +22,6 @@ Keeping schema.prisma inside src/ makes migrations/config messy.
 - npx shadcn@latest add
 
 
+//add caching in slices 
+
+

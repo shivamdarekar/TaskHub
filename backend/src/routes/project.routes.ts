@@ -6,6 +6,8 @@ import {
   canManageProject,
   isWorkspaceOwner
 } from "../middleware/roleCheck.middleware";
+import { validate } from "../config/validate";
+import { createProjectSchema, updateProjectSchema } from "../config/schema";
 import {
   createProject,
 getProjectById,
@@ -23,6 +25,7 @@ router.use(verifyJWT);
 
 router.post("/workspace/:workspaceId/create",
     isWorkspaceOwner,
+    validate(createProjectSchema),
     createProject
 );
 
@@ -40,7 +43,7 @@ router.get("/:projectId/activities", hasProjectAccess, getProjectActivities);
 
 router.get("/:projectId/overview", hasProjectAccess, getProjectOverview);
 
-router.patch("/:projectId", canManageProject, updateProject);
+router.patch("/:projectId", canManageProject, validate(updateProjectSchema), updateProject);
 
 router.delete("/:projectId", canManageProject, deleteProject);
 

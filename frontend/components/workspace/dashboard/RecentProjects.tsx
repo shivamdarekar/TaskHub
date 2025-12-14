@@ -92,7 +92,7 @@ export default function RecentProjects({
               <div
                 key={project.id}
                 onClick={() => onProjectClick(project.id)}
-                className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-all duration-200 hover:shadow-sm"
               >
                 <div
                   className={`h-10 w-10 rounded-lg ${getProjectColor(

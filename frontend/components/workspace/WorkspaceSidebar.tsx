@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
-import { fetchUserWorkspaces } from "@/redux/slices/workspaceSlice";
 
 import {
   Home,
@@ -34,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { clearUser, logoutUser } from "@/redux/slices/authSlice";
+import CreateProjectDialog from "./CreateProjectDialog";
 
 interface SidebarProps {
   workspaceId: string;
@@ -45,11 +45,14 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
   const dispatch = useAppDispatch();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
 
   // Redux state
-  const { currentWorkspace, projects, workspaces } = useAppSelector(
+  const { currentWorkspace, workspaces } = useAppSelector(
     (state) => state.workspace
   );
+
+  const {projects} = useAppSelector((state) => state.project);
   const { user } = useAppSelector((state) => state.auth);
 
   // MENU ITEMS
@@ -60,6 +63,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
       href: `/workspace/${workspaceId}`,
       active:
         params.workspaceId === workspaceId &&
+        !params.projectId &&
         (params.section === undefined || params.section === null),
     },
     {
@@ -284,7 +288,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
                     key={item.label}
                     onClick={() => router.push(item.href)}
                     className={cn(
-                      "w-full flex items-center gap-1.5 md:gap-3 px-3 py-2.5 rounded-lg transition-all text-xs md:text-sm font-medium",
+                      "w-full flex items-center gap-1.5 md:gap-3 px-3 py-2.5 rounded-lg transition-all text-xs md:text-sm font-medium cursor-pointer",
                       isCollapsed && "justify-center",
                       item.active
                         ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 shadow-sm"
@@ -311,10 +315,8 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 hover:bg-blue-50 hover:text-blue-600 text-gray-900"
-                  onClick={() =>
-                    router.push(`/workspace/${workspaceId}/projects/new`)
-                  }
+                  className="h-6 w-6 hover:bg-blue-50 hover:text-blue-600"
+                  onClick={() => setCreateProjectOpen(true)}
                   title="Create new Project"
                 >
                   <Plus className="h-5 w-5" />
@@ -331,26 +333,37 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
                 <FolderKanban className="h-5 w-5 text-gray-700" />
               </button>
             ) : (
-              <nav className="space-y-1">
+              <nav className="space-y-0.5">
                 {projects.length === 0 ? (
                   <p className="text-xs text-gray-500 px-2 py-2">
                     No projects yet
                   </p>
                 ) : (
-                  projects.slice(0, 5).map((project) => (
-                    <button
-                      key={project.id}
-                      onClick={() =>
-                        router.push(
-                          `/workspace/${workspaceId}/projects/${project.id}`
-                        )
-                      }
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm text-gray-700 transition-colors group"
-                    >
-                      <FolderKanban className="h-4 w-4 shrink-0 text-gray-500 group-hover:text-blue-600" />
-                      <span className="truncate">{project.name}</span>
-                    </button>
-                  ))
+                  projects.map((project) => {
+                    const isActive = params.projectId === project.id;
+                    return (
+                      <button
+                        key={project.id}
+                        onClick={() =>
+                          router.push(
+                            `/workspace/${workspaceId}/projects/${project.id}`
+                          )
+                        }
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors group",
+                          isActive
+                            ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 shadow-sm"
+                            : "text-gray-700 hover:bg-gray-100"
+                        )}
+                      >
+                        <FolderKanban className={cn(
+                          "h-4 w-4 shrink-0",
+                          isActive ? "text-blue-600" : "text-gray-500 group-hover:text-blue-600"
+                        )} />
+                        <span className="truncate">{project.name}</span>
+                      </button>
+                    );
+                  })
                 )}
               </nav>
             )}
@@ -405,6 +418,13 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
           </DropdownMenu>
         </div>
       </aside>
+
+      {/* Create Project Dialog */}
+      <CreateProjectDialog
+        open={createProjectOpen}
+        onOpenChange={setCreateProjectOpen}
+        workspaceId={workspaceId}
+      />
     </>
   );
 }

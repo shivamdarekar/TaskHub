@@ -6,27 +6,34 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
     fetchWorkspaceById,
     fetchUserWorkspaces,
-    clearWorkspaceData
+    clearWorkspaceData,
 } from "@/redux/slices/workspaceSlice";
+
+import {
+    fetchWorkspaceProjects,
+    clearProjects
+} from "@/redux/slices/projectSlice";
+
 import { Loader2 } from "lucide-react";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const { workspaceId } = useParams<{ workspaceId: string }>();
     const dispatch = useAppDispatch();
-
-    const [checkingWorkspaces, setCheckingWorkspaces] = useState(true);
+    const { workspaceId } = useParams<{ workspaceId: string }>();
 
     const { isAuthenticated, authLoading } = useAppSelector((state) => state.auth);
-    const { workspaces, loading: workspacesLoading, currentWorkspace } = useAppSelector((state) => state.workspace);
+    const { workspaces, loading: workspacesLoading, currentWorkspace } =
+        useAppSelector((state) => state.workspace);
 
-    //Redirect unauthenticated users
+    const [checkingWorkspaces, setCheckingWorkspaces] = useState(true);
+    const [hasFetchedWorkspace, setHasFetchedWorkspace] = useState(false);
+
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
             router.replace("/login");
         }
-    }, [authLoading, isAuthenticated, router]);
+    }, [authLoading, isAuthenticated]);
 
     //Fetch user workspaces & ensure user has at least one
     useEffect(() => {
@@ -34,8 +41,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             if (workspaces.length === 0 && !workspacesLoading) {
                 dispatch(fetchUserWorkspaces())
                     .unwrap()
-                    .then((fetched) => {
-                        if (fetched.length === 0) {
+                    .then((list) => {
+                        if (list.length === 0) {
                             router.replace("/workspace/create");
                         }
                         setCheckingWorkspaces(false);
@@ -46,32 +53,38 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             }
         }
     }, [
-        isAuthenticated,
         authLoading,
+        isAuthenticated,
         workspaces.length,
         workspacesLoading,
-        dispatch,
-        router,
     ]);
 
-    // Fetch Workspace Details when workspace switch
+    //Fetch workspace details when user switches workspace Prevents double-fetch using hasFetchedWorkspace
     useEffect(() => {
-        if (!authLoading && isAuthenticated && !checkingWorkspaces) {
-            if (!currentWorkspace || currentWorkspace.id !== workspaceId) {
-                dispatch(clearWorkspaceData());
-                dispatch(fetchWorkspaceById(workspaceId as string));
-            }
+        if (
+            workspaceId && !authLoading && isAuthenticated &&
+            !checkingWorkspaces && !hasFetchedWorkspace
+        ) {
+            setHasFetchedWorkspace(true);
+
+            dispatch(clearWorkspaceData());
+            dispatch(clearProjects());
+
+            // Fetch all at once
+            Promise.all([
+                dispatch(fetchWorkspaceById(workspaceId)).unwrap(),
+                dispatch(fetchWorkspaceProjects(workspaceId)).unwrap(),
+            ]);
+
         }
     }, [
         workspaceId,
-        currentWorkspace,
-        checkingWorkspaces,
-        isAuthenticated,
         authLoading,
-        dispatch,
+        isAuthenticated,
+        checkingWorkspaces,
+        hasFetchedWorkspace,
     ]);
 
-    //Global loading screen
     if (authLoading || checkingWorkspaces || !isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">

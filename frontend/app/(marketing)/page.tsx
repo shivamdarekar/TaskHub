@@ -30,15 +30,12 @@ export default function Home() {
     (state) => state.auth
   );
   const {workspaces,loading} = useAppSelector((state) => state.workspace);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if(mounted && isAuthenticated){
+    if(isAuthenticated && workspaces.length === 0){
       dispatch(fetchUserWorkspaces());
     }
-  },[mounted,isAuthenticated,dispatch]);
+  },[isAuthenticated, dispatch, workspaces.length]);
 
   const handleGoToWorkspace = () =>{
     if(workspaces.length > 0){
@@ -48,7 +45,7 @@ export default function Home() {
     }
   }
 
-  if (!mounted || authLoading) {
+  if (authLoading) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-white">
       <Loader2 className="h-8 w-8 animate-spin text-gray-500" aria-hidden="true" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,33 +40,38 @@ export default function LoginPage() {
     otp: "",
   });
   const [isCheckingWorkspaces,setIsCheckingWorkspaces] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [twoFaSubmitting, setTwoFaSubmitting] = useState(false);
+  const isMountedRef = useRef(true);
 
   //handle navigation after authentication
   const handlePostLoginNavigation = async () => {
+    if (!isMountedRef.current) return;
     setIsCheckingWorkspaces(true);
     try{
       const result = await dispatch(fetchUserWorkspaces()).unwrap();
+      if (!isMountedRef.current) return;
       if (result.length == 0) {
         router.push("/workspace/create")
       } else {
         router.push(`/workspace/${result[0].id}`);
       }
     } catch (err) {
-      console.error("Failed to fetch workspaces",err);
+      if (isMountedRef.current) {
+        console.error("Failed to fetch workspaces",err);
+        setSubmitting(false);
+      }
     } finally {
-      setIsCheckingWorkspaces(false);
+      if (isMountedRef.current) {
+        setIsCheckingWorkspaces(false);
+      }
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated && !requires2FA && !isCheckingWorkspaces) {
-      handlePostLoginNavigation();
-    }
-  }, [isAuthenticated, requires2FA]);
-
-  useEffect(() => {
-    // Clear error when component unmounts
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       dispatch(clearError());
     };
   }, [dispatch]);
@@ -79,9 +84,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
+  if (!isMountedRef.current) return;
+  setSubmitting(true);
   try {
     const result = await dispatch(loginUser(formData)).unwrap();
     const payload = result as LoginResponse;
+    if (!isMountedRef.current) return;
 
     if (payload && payload.requiresTwoFA) {
       setRequires2FA(true);
@@ -90,20 +98,37 @@ export default function LoginPage() {
         email: payload.email,
         otp: "",
       });
+      setSubmitting(false);
       return;
     }
     
+    await handlePostLoginNavigation();
   } catch (err) {
-    // error is already set in redux slice via rejectWithValue
-    console.error("Login failed:", err);
+    if (isMountedRef.current) {
+      console.error("Login failed:", err);
+      setSubmitting(false);
+    }
   }
 };
 
   const handle2FASubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (twoFaSubmitting || !isMountedRef.current) return;
+    setTwoFaSubmitting(true);
 
-    const result = await dispatch(verify2FA(twoFAData)).unwrap();
-    setRequires2FA(false);
+    try {
+      const result = await dispatch(verify2FA(twoFAData)).unwrap();
+      if (!isMountedRef.current) return;
+      
+      setRequires2FA(false);
+      setTwoFAData({ twoFAToken: "", email: "", otp: "" });
+      await handlePostLoginNavigation();
+    } catch (err) {
+      if (isMountedRef.current) {
+        console.error("2FA verification failed:", err);
+        setTwoFaSubmitting(false);
+      }
+    }
   };
 
   // show loading if checking workspaces
@@ -172,9 +197,9 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-                disabled={loading || twoFAData.otp.length !== 6}
+                disabled={loading || twoFaSubmitting || twoFAData.otp.length !== 6}
               >
-                {loading ? (
+                {loading || twoFaSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Verifying...
@@ -293,9 +318,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-              disabled={loading || isCheckingWorkspaces}
+              disabled={submitting || loading || isCheckingWorkspaces}
             >
-              {loading || isCheckingWorkspaces ? (
+              {submitting || loading || isCheckingWorkspaces ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   {isCheckingWorkspaces ? "Loading workspace..." : "Signing in..."}

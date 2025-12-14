@@ -26,12 +26,87 @@ export const resetPasswordSchema = z.object({
     path: ["confirmPassword"]
 });
 
-export const createWorkspaceSchema = z.object({
-    name: z.string().min(1, { message: "Workspace name is required" }).trim(),
-    description: z.string().optional().or(z.literal(""))
-});
-
-
 export const toggle2FASchema = z.object({
     password: z.string().min(1, "Password is required")
 });
+
+// Workspace Schemas
+export const createWorkspaceSchema = z.object({
+    name: z.string()
+        .trim()
+        .min(1, "Workspace name is required")
+        .min(3, "Workspace name must be at least 3 characters")
+        .max(100, "Workspace name cannot exceed 100 characters"),
+    description: z.string()
+        .trim()
+        .max(500, "Description cannot exceed 500 characters")
+        .optional()
+        .nullable(),
+});
+
+export const updateWorkspaceSchema = z.object({
+    name: z.string()
+        .trim()
+        .min(3, "Workspace name must be at least 3 characters")
+        .max(100, "Workspace name cannot exceed 100 characters")
+        .optional(),
+    description: z.string()
+        .trim()
+        .max(500, "Description cannot exceed 500 characters")
+        .optional()
+        .nullable(),
+});
+
+// Project Schemas
+export const createProjectSchema = z.object({
+    name: z.string()
+        .trim()
+        .min(1, "Project name is required")
+        .min(3, "Project name must be at least 3 characters")
+        .max(100, "Project name cannot exceed 100 characters"),
+    description: z.string()
+        .trim()
+        .max(1000, "Description cannot exceed 1000 characters")
+        .optional()
+        .nullable(),
+    memberIds: z.array(z.string().uuid("Invalid user ID format"))
+        .optional()
+        .default([]),
+});
+
+export const updateProjectSchema = z.object({
+    name: z.string()
+        .trim()
+        .min(3, "Project name must be at least 3 characters")
+        .max(100, "Project name cannot exceed 100 characters")
+        .optional(),
+    description: z.string()
+        .trim()
+        .max(1000, "Description cannot exceed 1000 characters")
+        .optional()
+        .nullable(),
+});
+
+// Task Schemas (can be extended for task operations)
+export const createTaskSchema = z.object({
+    title: z.string()
+        .trim()
+        .min(1, "Task title is required")
+        .min(3, "Task title must be at least 3 characters")
+        .max(200, "Task title cannot exceed 200 characters"),
+    description: z.string()
+        .trim()
+        .max(2000, "Description cannot exceed 2000 characters")
+        .optional()
+        .nullable(),
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        .optional()
+        .default("MEDIUM"),
+    status: z.enum(["TODO", "IN_PROGRESS", "IN_REVIEW", "COMPLETED", "BACKLOG"])
+        .optional()
+        .default("TODO"),
+    dueDate: z.string().datetime().optional().nullable(),
+    assigneeId: z.string().uuid("Invalid assignee ID format").optional().nullable(),
+});
+
+export const updateTaskSchema = createTaskSchema.partial();

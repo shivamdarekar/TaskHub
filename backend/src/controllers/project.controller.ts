@@ -78,13 +78,16 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
 
     if(!project) throw new ApiError(500,"Error while creating project")
 
-    //log activity
-        await logActivity({
-            type: ActivityType.PROJECT_CREATED,
-            description: `Created Project ${name}`,
-            userId,
-            projectId: project.id,
-        });
+    //log activity (async, doesn't block response if it fails)
+    logActivity({
+        type: ActivityType.PROJECT_CREATED,
+        description: `Created Project ${name}`,
+        userId,
+        projectId: project.id,
+    }).catch((err) => {
+        console.error(`Failed to log activity for project ${project.id}:`, err);
+        // Don't throw - activity logging failure shouldn't break the response
+    });
 
     return res.status(201).json(
         new ApiResponse(201, { project }, "Project created successfully")
@@ -263,6 +266,7 @@ export const getProjectOverview = asyncHandler(
 
         if (!projectId) throw new ApiError(401, "ProjectId is required");
 
+        // Optimize query: limit tasks to avoid N+1 problem, use _count for totals
         const project = await prisma.project.findUnique({
             where: { id: projectId },
             include: {
@@ -281,6 +285,7 @@ export const getProjectOverview = asyncHandler(
                         createdAt: true,
                         assigneeId: true,
                     },
+                    take: 100,  // Limit to prevent loading entire task table
                 },
                 projectAccess: {
                     where: { hasAccess: true },
@@ -291,6 +296,7 @@ export const getProjectOverview = asyncHandler(
                         comments: true,
                         files: true,
                         activities: true,
+                        tasks: true,  // Use _count for total count
                     },
                 },
             },
@@ -300,8 +306,8 @@ export const getProjectOverview = asyncHandler(
             throw new ApiError(404, "Project not found");
         }
 
-        // Calculate statistics
-        const totalTasks = project.tasks.length;
+        // Calculate statistics from loaded tasks (up to 100)
+        const totalTasks = project._count.tasks;  // Use _count for total
         const completedTasks = project.tasks.filter((t) => t.status === "COMPLETED").length;
         const overdueTasks = project.tasks.filter(
             (t) => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED"
@@ -401,17 +407,20 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!updatedProject) throw new ApiError(401, "Failed to update project");
 
-    //log acticity
+    //log activity (async, doesn't block response if it fails)
     const changes: string[] = [];
     if (name && name !== cuurentProject?.name) changes.push(`name to "${name}"`);
     if (description !== undefined) changes.push("description");
 
     if (changes.length > 0) {
-        await logActivity({
+        logActivity({
             type: ActivityType.PROJECT_UPDATED,
             description: `Updated project ${changes.join(" and ")}`,
             userId,
             projectId,
+        }).catch((err) => {
+            console.error(`Failed to log activity for project ${projectId}:`, err);
+            // Don't throw - activity logging failure shouldn't break the response
         });
     }
 
@@ -444,6 +453,17 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
     });
 
     if (!deleteProject) throw new ApiError(403, "Error while deleting the Project");
+
+    // Log deletion (async, doesn't block response if it fails)
+    logActivity({
+        type: ActivityType.PROJECT_DELETED,
+        description: `Deleted project "${project.name}"`,
+        userId,
+        projectId,
+    }).catch((err) => {
+        console.error(`Failed to log activity for project ${projectId}:`, err);
+        // Don't throw - activity logging failure shouldn't break the response
+    });
 
     return res.status(200)
         .json(

@@ -5,9 +5,9 @@
     "outDir": "./dist",              // Compiled JS goes here
 
     /* Module System */
-    "module": "commonjs",            // Still compiles to CJS (Node-friendly)
+    "module": "Node16",              // Matches moduleResolution Node16
     "target": "ES2020",              // Modern JS target
-    "moduleResolution": "node",      // Resolve node_modules correctly
+    "moduleResolution": "node16",    // Modern Node.js module resolution
     "esModuleInterop": true,         // Lets you use `import express from "express";`
 
     /* Environment */

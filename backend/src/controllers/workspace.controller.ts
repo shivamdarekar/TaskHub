@@ -13,36 +13,42 @@ interface workspaceBody{
 const createWorkSpace = asyncHandler(async (req: Request<{},{},workspaceBody>, res: Response) => {
     const { name, description } = req.body;
 
-    if (!name.trim() || typeof name != "string") {
+    if (!name?.trim() || typeof name != "string") {
         throw new ApiError(400, "Workspace name is required");
     }
 
     const userId = req.user?.id;
     if (!userId) throw new ApiError(401, "Not Authorized");
 
-    const workspace = await prisma.workSpace.create({
-        data: {
-            name: name.trim(),
-            description: description ? description.trim() : null,
-            ownerId: userId,
-        },
-        include: {
-            owner: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
+    // Use transaction to ensure both operations succeed or fail together (fixes race condition)
+    const workspace = await prisma.$transaction(async (tx) => {
+        const newWorkspace = await tx.workSpace.create({
+            data: {
+                name: name.trim(),
+                description: description ? description.trim() : null,
+                ownerId: userId,
+            },
+            include: {
+                owner: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
                 }
             }
-        }
-    });
+        });
 
-    await prisma.workspaceMembers.create({
-        data: {   
-            userId: userId,
-            workspaceId: workspace.id,
-            accessLevel: "OWNER"
-        }
+        // Create owner membership in same transaction
+        await tx.workspaceMembers.create({
+            data: {   
+                userId: userId,
+                workspaceId: newWorkspace.id,
+                accessLevel: "OWNER"
+            }
+        });
+
+        return newWorkspace;
     });
  
     return res 
@@ -212,19 +218,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
     if (!userId) throw new ApiError(401, "Not Authorized");
     if (!workspaceId) throw new ApiError(400, "Workspace id is required");
 
-    //check user is member of workspace or not
-    const membership = await prisma.workspaceMembers.findFirst({
-        where: {
-            userId,
-            workspaceId,
-        }
-    });
-
-    if (!membership) {
-        throw new ApiError(403, "You don't have access to this workspace");
-    }
-
-    //basic workspace info and counts
+    //combine membership check and workspace fetch into single query to eliminate duplicate access checks
     const workspace = await prisma.workSpace.findUnique({
         where: { id: workspaceId },
         select: {
@@ -245,11 +239,16 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
                     projects: true,
                 },
             },
+            members: {
+                where: { userId },
+                select: { id: true },
+                take: 1,
+            },
         },
     });
 
-    if (!workspace) {
-        throw new ApiError(404, "Workspace not found");
+    if (!workspace || workspace.members.length === 0) {
+        throw new ApiError(workspace ? 403 : 404, workspace ? "You don't have access to this workspace" : "Workspace not found");
     }
 
     //task stats

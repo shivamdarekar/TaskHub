@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import workspaceReducer from "./slices/workspaceSlice"
+import projectReducer from "./slices/projectSlice"
 
 export const store = configureStore({
     reducer: {
         auth: authReducer,
         workspace: workspaceReducer,
+        project: projectReducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
