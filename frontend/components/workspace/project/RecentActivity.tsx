@@ -56,7 +56,7 @@ export default function RecentActivity({ activities, loading }: RecentActivityPr
     );
   }
 
-  const displayActivities = activities?.slice(0, 5) || [];
+  const displayActivities = activities?.slice(0, 15) || [];
 
   const getActivityIcon = (action: string) => {
     const colors = [

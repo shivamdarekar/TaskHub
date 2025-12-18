@@ -149,8 +149,9 @@ const resendVerification = asyncHandler(async (req: Request, res: Response) => {
 //toggle 2FA status
 const toggle2FA = asyncHandler(async (req: Request<{}, {}, Toggle2FABody>, res: Response) => {
   const { password } = req.body;
-  const userId = req.user.id;
+  const userId = req.user?.id;
 
+  if (!userId) throw new ApiError(400, "Not Authorized");
   if (!password) throw new ApiError(400, "Password is required to change 2FA settings");
 
   //find user
@@ -537,7 +538,6 @@ const fetchCurrentUser = asyncHandler(async (req: Request, res: Response) => {
 
 //todo
 //resend otp
-//change password
 //change email
 //change name
 

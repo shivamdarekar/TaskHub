@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "../utils/asynchandler";
 import { ApiError } from "../utils/apiError";
 import prisma from "../config/prisma";
+import { throwDeprecation } from "process";
 
 // Check if user is workspace owner
 export const isWorkspaceOwner = asyncHandler(
@@ -30,7 +31,7 @@ export const isWorkspaceOwner = asyncHandler(
 // Check if user has access to workspace (owner or member)
 export const hasWorkspaceAccess = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { workspaceId } = req.params;
-  const userId = req.user.id;
+  const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
   if (!workspaceId) throw new ApiError(400, "Workspace ID is required");
@@ -62,10 +63,11 @@ export const hasWorkspaceAccess = asyncHandler(async (req: Request, res: Respons
 
 
 // Check if user is project owner or admin
+//Workspace owner only
 export const canManageProject = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { projectId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user?.id;
 
     if(!userId) throw new ApiError(401,"Not Authorized");
     if(!projectId) throw new ApiError(400,"ProjectId is required");
@@ -95,7 +97,7 @@ export const canManageProject = asyncHandler(
 export const hasProjectAccess = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { projectId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user?.id;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
     if (!projectId) throw new ApiError(400, "Project ID is required");
@@ -143,3 +145,60 @@ export const hasProjectAccess = asyncHandler(
     next();
   }
 );
+
+export const verifyTaskExists = asyncHandler(async (req:Request, res:Response, next:NextFunction) => {
+  const { taskId, projectId } = req.params;
+
+  if (!taskId) throw new ApiError(400, "Task ID is required");
+  if (!projectId) throw new ApiError(400, "Project ID is required");
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, projectId },
+    select: {
+      id: true,
+      createdBy: true,
+      assigneeId: true,
+      project: {
+        select: {
+          workspace: {
+            select: { ownerId: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!task) throw new ApiError(404, "Task not found");
+
+  req.task = {
+    id: task.id,
+    createdBy: task.createdBy,
+    assigneeId: task.assigneeId,
+    projectOwnerId: task.project.workspace.ownerId,
+  };
+
+  next();
+});
+
+
+export const canModifyTask = (req: Request, res: Response, next: NextFunction) => {
+  const { user, task } = req;
+
+  if (!user || !task) {
+    throw new ApiError(500, "Request context missing");
+  }
+
+  const allowed =
+    task.projectOwnerId === user.id ||
+    task.createdBy === user.id ||
+    task.assigneeId === user.id;
+
+  if (!allowed) {
+    throw new ApiError(403, "You cannot modify this task");
+  }
+
+  next();
+};
+
+
+

@@ -14,9 +14,9 @@ import TaskDistributionChart from "@/components/workspace/project/TaskDistributi
 import RecentActivity from "@/components/workspace/project/RecentActivity";
 import RecentComments from "@/components/workspace/project/RecentComments";
 import {
-  fetchProjectById,
+  fetchProjectBasicInfo,
   fetchProjectOverview,
-  fetchProjectActivities,
+  fetchRecentProjectActivities,
   fetchProjectMembers,
 } from "@/redux/slices/projectSlice";
 
@@ -31,7 +31,8 @@ export default function ProjectDashboardPage() {
     currentProject,
     overview,
     overviewLoading,
-    activities,
+    recentActivities,
+    recentActivitiesLoading,
     members,
     error,
   } = useAppSelector((state) => state.project);
@@ -45,9 +46,9 @@ export default function ProjectDashboardPage() {
     }
 
     Promise.all([
-      dispatch(fetchProjectById(projectId)).unwrap(),
+      dispatch(fetchProjectBasicInfo(projectId)).unwrap(),
       dispatch(fetchProjectOverview(projectId)).unwrap(),
-      dispatch(fetchProjectActivities({ projectId, limit: 10 })).unwrap(),
+      dispatch(fetchRecentProjectActivities({ projectId, limit: 15 })).unwrap(),
       dispatch(fetchProjectMembers(projectId)).unwrap(),
     ]).catch((err) => {
       console.error("Failed to fetch project data:", err);
@@ -151,7 +152,7 @@ export default function ProjectDashboardPage() {
           {/* RECENT ACTIVITY */}
           <div className="lg:col-span-1">
             <RecentActivity
-              activities={activities
+              activities={recentActivities
                 .filter(
                   (a) => a?.id && a?.user?.name && a?.type && a?.createdAt
                 )
@@ -162,7 +163,7 @@ export default function ProjectDashboardPage() {
                   target: a.description || "No description",
                   timestamp: a.createdAt,
                 }))}
-              loading={false}
+              loading={recentActivitiesLoading}
             />
           </div>
 
@@ -170,7 +171,7 @@ export default function ProjectDashboardPage() {
           <div className="lg:col-span-1">
             <RecentComments
               comments={
-                overview?.recentActivities
+                recentActivities
                   ?.filter((a) => a?.id && a?.user?.name && a?.createdAt)
                   .map((a) => ({
                     id: a.id,

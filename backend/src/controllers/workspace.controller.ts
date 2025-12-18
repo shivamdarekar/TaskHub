@@ -230,7 +230,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
                 select: {
                     id: true,
                     name: true,
-                    email: true
+                    email: true,
                 },
             },
             _count: {
@@ -239,16 +239,11 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
                     projects: true,
                 },
             },
-            members: {
-                where: { userId },
-                select: { id: true },
-                take: 1,
-            },
-        },
+        }
     });
 
-    if (!workspace || workspace.members.length === 0) {
-        throw new ApiError(workspace ? 403 : 404, workspace ? "You don't have access to this workspace" : "Workspace not found");
+    if (!workspace) {
+        throw new ApiError( 404, "Workspace not found");
     }
 
     //task stats

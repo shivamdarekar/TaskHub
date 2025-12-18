@@ -4,7 +4,6 @@ import { createWorkSpace,
     getUserWorkspace, 
     getWorkspaceOverview,
     getWorkspaceById,
-    getWorkspaceProjects,
     getWorkspaceMembers,
 } from "../controllers/workspace.controller";
 import { validate } from "../config/validate";

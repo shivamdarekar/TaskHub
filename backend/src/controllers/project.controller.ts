@@ -1,17 +1,17 @@
 import prisma from "../config/prisma";
-import { getRecentActivities, logActivity, ActivityType } from "../services/activityLogger";
+import { logActivity, ActivityType } from "../services/activityLogger";
 import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/apiResponse";
 import { asyncHandler } from "../utils/asynchandler";
 import { Request, Response } from "express";
 
-interface ProjectBody{
+interface ProjectBody {
     name: string;
     description?: string;
     memberIds?: string[]; //array of user IDs to grant access
 }
 
-interface UpdateProjectBody{
+interface UpdateProjectBody {
     name?: string;
     description?: string;
 }
@@ -76,7 +76,7 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
         return newProject;
     });
 
-    if(!project) throw new ApiError(500,"Error while creating project")
+    if (!project) throw new ApiError(500, "Error while creating project")
 
     //log activity (async, doesn't block response if it fails)
     logActivity({
@@ -95,90 +95,40 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
 });
 
 
-export const getProjectById = asyncHandler(
-    async (req: Request, res: Response) => {
-        const { projectId } = req.params;
-        if (!projectId) throw new ApiError(401, "ProjectId is required");
+export const getProjectBasicInfo = asyncHandler(async (req: Request, res: Response) => {
+    const { projectId } = req.params;
 
-        const project = await prisma.project.findUnique({
-            where: { id: projectId },
-            include: {
-                workspace: {
-                    select: {
-                        id: true,
-                        name: true,
-                        ownerId: true
-                    }
+    if (!projectId) throw new ApiError(400, "ProjectId is required");
+
+    const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            createdAt: true,
+            updatedAt: true,
+            workspace: {
+                select: {
+                    id: true,
+                    name: true,
                 },
-                creator: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
-                    }
-                },
-                projectAccess: {
-                    where: { hasAccess: true },
-                    include: {
-                        workspaceMember: {
-                            include: {
-                                User: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        email: true
-                                    }
-                                }
-                            },
-                        }
-                    }
-                },
-                tasks: {
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true,
-                        priority: true,
-                        dueDate: true,
-                        assigneeId: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        tasks: true,
-                        comments: true,
-                        files: true
-                    }
+            },
+            creator: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
                 }
             }
-        });
+        }
+    });
 
-        if (!project) throw new ApiError(404, "Project not found");
+    if (!project) throw new ApiError(404, "Project not found");
 
-        const members = project.projectAccess.map((p) => ({
-            id: p.workspaceMember.User.id,
-            name: p.workspaceMember.User.name,
-            email: p.workspaceMember.User.email,
-            accessLevel: p.workspaceMember.accessLevel,
-            joinAt: p.createdAt
-        }));
-
-        const projectData = {
-            id: project.id,
-            name: project.name,
-            description: project.description,
-            workspace: project.workspace,
-            members,
-            totalComments: project._count.comments,
-            totalFiles: project._count.files,
-            totalTasks: project._count.tasks,
-            createdAt: project.createdAt,
-            updatedAt: project.updatedAt,
-        };
-
-        return res.status(200).json(
-            new ApiResponse(200, projectData, "Project fetched successfully")
-        )
+    return res
+        .status(200)
+        .json(new ApiResponse(200, project, "Project data fetched"));
 });
 
 
@@ -269,13 +219,7 @@ export const getProjectOverview = asyncHandler(
         // Optimize query: limit tasks to avoid N+1 problem, use _count for totals
         const project = await prisma.project.findUnique({
             where: { id: projectId },
-            include: {
-                workspace: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
+            select: {
                 tasks: {
                     select: {
                         id: true,
@@ -285,7 +229,7 @@ export const getProjectOverview = asyncHandler(
                         createdAt: true,
                         assigneeId: true,
                     },
-                    take: 100,  // Limit to prevent loading entire task table
+                    take: 100
                 },
                 projectAccess: {
                     where: { hasAccess: true },
@@ -307,61 +251,38 @@ export const getProjectOverview = asyncHandler(
         }
 
         // Calculate statistics from loaded tasks (up to 100)
-        const totalTasks = project._count.tasks;  // Use _count for total
-        const completedTasks = project.tasks.filter((t) => t.status === "COMPLETED").length;
-        const overdueTasks = project.tasks.filter(
-            (t) => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED"
-        ).length;
-        const unassignedTasks = project.tasks.filter((t) => !t.assigneeId).length;
+        const total = project._count.tasks;
+        const completed = project.tasks.filter(t => t.status === "COMPLETED").length;
+        const overdue = project.tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
 
         const tasksByStatus = {
-            TODO: project.tasks.filter((t) => t.status === "TODO").length,
-            IN_PROGRESS: project.tasks.filter((t) => t.status === "IN_PROGRESS").length,
-            IN_REVIEW: project.tasks.filter((t) => t.status === "IN_REVIEW").length,
-            COMPLETED: completedTasks,
-            BACKLOG: project.tasks.filter((t) => t.status === "BACKLOG").length,
+            TODO: project.tasks.filter(t => t.status === "TODO").length,
+            IN_PROGRESS: project.tasks.filter(t => t.status === "IN_PROGRESS").length,
+            IN_REVIEW: project.tasks.filter(t => t.status === "IN_REVIEW").length,
+            COMPLETED: completed,
+            BACKLOG: project.tasks.filter(t => t.status === "BACKLOG").length,
         };
 
         const tasksByPriority = {
-            LOW: project.tasks.filter((t) => t.priority === "LOW").length,
-            MEDIUM: project.tasks.filter((t) => t.priority === "MEDIUM").length,
-            HIGH: project.tasks.filter((t) => t.priority === "HIGH").length,
-            CRITICAL: project.tasks.filter((t) => t.priority === "CRITICAL").length,
+            LOW: project.tasks.filter(t => t.priority === "LOW").length,
+            MEDIUM: project.tasks.filter(t => t.priority === "MEDIUM").length,
+            HIGH: project.tasks.filter(t => t.priority === "HIGH").length,
+            CRITICAL: project.tasks.filter(t => t.priority === "CRITICAL").length,
         };
 
-        const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-        // Get recent activities (last 10)
-        const recentActivities = await getRecentActivities(projectId, 10);
-
-        const overview = {
-            projectId: project.id,
-            projectName: project.name,
-            projectDescription: project.description,
-            workspace: project.workspace,
+        return res.status(200).json(new ApiResponse(200, {
             stats: {
-                totalTasks,
-                completedTasks,
-                overdueTasks,
-                unassignedTasks,
-                completionRate: Math.round(completionRate * 10) / 10,
-                totalMembers: project.projectAccess.length,
+                totalTasks: total,
+                completedTasks: completed,
+                overdueTasks: overdue,
                 totalComments: project._count.comments,
                 totalFiles: project._count.files,
-                totalActivities: project._count.activities,
+                totalMembers: project.projectAccess.length,
             },
             tasksByStatus,
             tasksByPriority,
-            recentActivities,
-            createdAt: project.createdAt,
-            updatedAt: project.updatedAt,
-        };
-
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(200, overview, "Project overview fetched successfully")
-            );
+        }, "Overview fetched"));
     }
 );
 
@@ -378,7 +299,7 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
         throw new ApiError(400, "Atleast one field is required");
     }
 
-    const cuurentProject = await prisma.project.findUnique({
+    const currentProject = await prisma.project.findUnique({
         where: {
             id: projectId
         },
@@ -409,7 +330,7 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
 
     //log activity (async, doesn't block response if it fails)
     const changes: string[] = [];
-    if (name && name !== cuurentProject?.name) changes.push(`name to "${name}"`);
+    if (name && name !== currentProject?.name) changes.push(`name to "${name}"`);
     if (description !== undefined) changes.push("description");
 
     if (changes.length > 0) {
@@ -517,48 +438,88 @@ export const getProjectMembers = asyncHandler(
                     200,
                     {
                         members,
-                        total: members.length
                     },
                     "Project members fetch successfully"
                 )
             )
+    });
+
+
+export const getProjectActivities = asyncHandler(async (req: Request, res: Response) => {
+  const { projectId } = req.params;
+  const userId = req.user?.id;
+
+  if (!userId) throw new ApiError(401, "Not Authorized");
+  if (!projectId) throw new ApiError(400, "Project ID is required");
+
+  const {
+    page = "1",
+    limit = "20",
+  } = req.query;
+
+  const pageNumber = Math.max(parseInt(page as string, 10), 1);
+  const pageSize = Math.min(Math.max(parseInt(limit as string, 10), 1), 100);
+  const skip = (pageNumber - 1) * pageSize;
+
+  const [activities, total] = await prisma.$transaction([
+    prisma.activity.findMany({
+      where: { projectId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    prisma.activity.count({
+      where: { projectId },
+    }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        activities,
+        pagination: {
+          total,
+          page: pageNumber,
+          limit: pageSize,
+          totalPages: Math.ceil(total / pageSize),
+          hasNext: pageNumber * pageSize < total,
+          hasPrev: pageNumber > 1,
+        },
+      },
+      "Project activities fetched successfully"
+    )
+  );
 });
 
 
-export const getProjectActivities = asyncHandler(
-    async(req:Request, res:Response) => {
-        const {projectId} = req.params;
-        if(!projectId) throw new ApiError(401, "ProjectId is required");
+export const getRecentProjectActivities = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  const limit = Math.min(parseInt(req.query.limit as string) || 15, 50);
 
-        const limit = parseInt(req.query.limit as string) || 50;
+    if (!projectId) throw new ApiError(401, "ProjectId is required");
+    
+  const activities = await prisma.activity.findMany({
+    where: { projectId },
+    include: {
+      user: {
+        select: { id: true, name: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 
-        const activities = await prisma.activity.findMany({
-            where:{
-                projectId,
-            },
-            include:{
-                user: {
-                    select:{
-                        id: true,
-                        name: true,
-                        email: true
-                    }
-                }
-            },
-            orderBy: {createdAt: "desc"},
-            take: limit,
-        });
-
-        if(!activities) throw new ApiError(404, "No activity found for this project");
-
-        return res.status(200)
-            .json(
-                new ApiResponse(
-                    200,
-                    {
-                        activities
-                    },
-                    "Project activities fetched successfully"
-                )
-            )
-    });
+  return res.json(
+    new ApiResponse(
+      200,
+      { activities },
+      "Recent activities fetched"
+    )
+  );
+});

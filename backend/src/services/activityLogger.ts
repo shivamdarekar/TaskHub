@@ -48,23 +48,3 @@ export const logActivity = async({
         console.error("Failed to log activity:",error);
     }
 };
-
-export const getRecentActivities = async(
-    projectId: string,
-    limit: number = 10
-) => {
-    return await prisma.activity.findMany({
-        where:{projectId},
-        include:{
-            user:{
-                select:{
-                    id:true,
-                    name:true,
-                    email:true,
-                }
-            }
-        },
-        orderBy:{createdAt:"desc"},
-        take: limit,
-    });
-};

@@ -148,6 +148,7 @@ model Task {
 
   activities  Activity[]
   attachments File[]
+  comments    Comment[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -176,6 +177,8 @@ model Comment {
   content   String
   projectId String
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId    String?
+  task      Task ?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

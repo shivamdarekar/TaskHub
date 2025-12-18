@@ -21,46 +21,31 @@ interface ProjectMember{
     accessLevel:string
 }
 
-interface ProjectDetails{
+interface ProjectBasicInfo {
     id: string;
     name: string;
     description?: string;
-    workspace:{
-        id:string;
+    createdAt: string;
+    updatedAt: string;
+    workspace: {
+        id: string;
         name: string;
-        ownerId: string
     };
     creator: {
         id: string;
         name: string;
         email: string;
     };
-    members: ProjectMember[];
-    totalComments: number;
-    totalFiles: number;
-    totalTasks: number;
-    createdAt: string;
-    updatedAt: string;
 }
 
-interface ProjectOverview{
-    projectId: string;
-    projectName: string;
-    projectDescription?: string | null;
-    workspace: {
-        id: string;
-        name: string;
-    };
+interface ProjectOverview {
     stats: {
         totalTasks: number;
         completedTasks: number;
         overdueTasks: number;
-        unassignedTasks: number;
-        completionRate: number;
-        totalMembers: number;
         totalComments: number;
         totalFiles: number;
-        totalActivities: number;
+        totalMembers: number;
     };
     tasksByStatus: {
         TODO: number;
@@ -75,10 +60,24 @@ interface ProjectOverview{
         HIGH: number;
         CRITICAL: number;
     };
-    recentActivities: Activity[];
-    createdAt: string;
-    updatedAt: string;
 }
+
+interface ProjectState {
+    projects: Project[];
+    projectsLoading: boolean;
+    currentProject: ProjectBasicInfo | null;
+    currentProjectLoading: boolean;
+    overview: ProjectOverview | null; 
+    overviewLoading: boolean;
+    activities: Activity[];
+    activitiesLoading: boolean;
+    recentActivities: Activity[];           
+    recentActivitiesLoading: boolean;
+    members: ProjectMemberDetails[];
+    membersLoading: boolean;
+    error: string | null;
+}
+
 
 interface Activity {
     id: string;
@@ -113,20 +112,6 @@ interface UpdateProjectData {
     description?: string;
 }
 
-interface ProjectState {
-    projects: Project[];
-    projectsLoading: boolean;
-    currentProject: ProjectDetails | null;
-    currentProjectLoading: boolean;
-    overview: ProjectOverview | null;
-    overviewLoading: boolean;
-    activities: Activity[];
-    activitiesLoading: boolean;
-    members: ProjectMemberDetails[];
-    membersLoading: boolean;
-    error: string | null;
-}
-
 const initialState: ProjectState = {
     projects: [],
     projectsLoading: false,
@@ -136,6 +121,8 @@ const initialState: ProjectState = {
     overviewLoading: false,
     activities: [],
     activitiesLoading: false,
+    recentActivities: [],  
+    recentActivitiesLoading: false,
     members: [],
     membersLoading: false,
     error: null,
@@ -158,16 +145,16 @@ export const createProject = createAsyncThunk(
     }
 );
 
-export const fetchProjectById = createAsyncThunk(
-    "project/fetchById",
+export const fetchProjectBasicInfo = createAsyncThunk(
+    "project/fetchBasicInfo",
     async(projectId: string, {rejectWithValue}) => {
-        try{
+        try {
             const response = await axiosInstance.get(
                 `/api/v1/project/${projectId}`
-            )
-            return response.data.data
-        } catch (error: unknown){
-            return rejectWithValue(handleAxiosError(error, "Failed to fetch project details"));
+            );
+            return response.data.data;
+        } catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to fetch project info"));
         }
     }
 );
@@ -200,16 +187,16 @@ export const fetchProjectMembers = createAsyncThunk(
     }
 );
 
-export const fetchProjectActivities = createAsyncThunk(
-    "project/fetchActivities",
-    async({projectId, limit}: {projectId: string, limit?: number}, {rejectWithValue}) => {
+export const fetchRecentProjectActivities = createAsyncThunk(
+    "project/fetchRecentActivities",
+    async({projectId, limit = 15}: {projectId: string, limit?: number}, {rejectWithValue}) => {
        try {
             const response = await axiosInstance.get(
-                `/api/v1/project/${projectId}/activities${limit ? `?limit=${limit}` : ""}`
+                `/api/v1/project/${projectId}/recent-activities?limit=${limit}`
             );
             return response.data.data.activities;
         } catch (error: unknown) {
-            return rejectWithValue(handleAxiosError(error, "Failed to fetch project activities"));
+            return rejectWithValue(handleAxiosError(error, "Failed to fetch recent activities"));
         }
     }
 );
@@ -269,6 +256,7 @@ const projectSlice = createSlice({
             state.currentProject = null;
             state.overview = null;
             state.activities = [];
+            state.recentActivities = [];
             state.members = [];
             state.error = null
         },
@@ -294,17 +282,16 @@ const projectSlice = createSlice({
                 state.error = action.payload as string;
             })
 
-            //fetch project by id
-            .addCase(fetchProjectById.pending, (state) => {
+            .addCase(fetchProjectBasicInfo.pending, (state) => {
                 state.currentProjectLoading = true;
                 state.error = null;
             })
-            .addCase(fetchProjectById.fulfilled, (state,action: PayloadAction<ProjectDetails>) => {
+            .addCase(fetchProjectBasicInfo.fulfilled, (state, action: PayloadAction<ProjectBasicInfo>) => {
                 state.currentProjectLoading = false;
                 state.currentProject = action.payload;
                 state.error = null;
             })
-            .addCase(fetchProjectById.rejected, (state, action) => {
+            .addCase(fetchProjectBasicInfo.rejected, (state, action) => {
                 state.currentProjectLoading = false;
                 state.error = action.payload as string;
             })
@@ -341,18 +328,18 @@ const projectSlice = createSlice({
                 state.error = action.payload as string
             })
 
-            //fetch project activities
-            .addCase(fetchProjectActivities.pending, (state) => {
-                state.activitiesLoading = true;
+            //fetch project recent activities
+            .addCase(fetchRecentProjectActivities.pending, (state) => {
+                state.recentActivitiesLoading = true;
                 state.error = null;
             })
-            .addCase(fetchProjectActivities.fulfilled, (state, action: PayloadAction<Activity[]>) => {
-                state.activitiesLoading = false;
-                state.activities = action.payload;
+            .addCase(fetchRecentProjectActivities.fulfilled, (state, action: PayloadAction<Activity[]>) => {
+                state.recentActivitiesLoading = false;
+                state.recentActivities = action.payload;
                 state.error = null;
             })
-            .addCase(fetchProjectActivities.rejected, (state,action) => {
-                state.activitiesLoading = false;
+            .addCase(fetchRecentProjectActivities.rejected, (state,action) => {
+                state.recentActivitiesLoading = false;
                 state.error = action.payload as string;
             })
 

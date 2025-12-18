@@ -13,13 +13,20 @@ import prisma from "../config/prisma";
 declare global {
   namespace Express {
     interface Request {
-      user: {
+      user?: {
         id: string;
         email: string;
+      };
+      task?: {
+        id: string;
+        createdBy: string;
+        assigneeId?: string | null;
+        projectOwnerId: string;
       };
     }
   }
 }
+
 
 export const verifyJWT = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {

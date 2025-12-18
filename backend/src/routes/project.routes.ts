@@ -10,13 +10,14 @@ import { validate } from "../config/validate";
 import { createProjectSchema, updateProjectSchema } from "../config/schema";
 import {
   createProject,
-getProjectById,
+  getProjectBasicInfo,
   updateProject,
   deleteProject,
   getProjectMembers,
   getProjectActivities,
   getProjectOverview,
-  getWorkspaceProjects
+  getWorkspaceProjects,
+  getRecentProjectActivities
 } from "../controllers/project.controller";
 
 
@@ -35,11 +36,13 @@ router.get(
   getWorkspaceProjects
 );
 
-router.get("/:projectId", hasProjectAccess, getProjectById);
+router.get("/:projectId", hasProjectAccess, getProjectBasicInfo);
 
 router.get("/:projectId/members", hasProjectAccess, getProjectMembers);
 
 router.get("/:projectId/activities", hasProjectAccess, getProjectActivities);
+
+router.get("/:projectId/recent-activities",hasProjectAccess, getRecentProjectActivities)
 
 router.get("/:projectId/overview", hasProjectAccess, getProjectOverview);
 
