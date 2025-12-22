@@ -18,31 +18,31 @@ interface RegisterUserBody {
   password: string;
 }
 
-interface LoginUserBody{
+interface LoginUserBody {
   email: string
-  password:string
+  password: string
 }
 
-interface ForgorPasswordBody{
+interface ForgorPasswordBody {
   email: string
 }
 
-interface VerifyOtpBody{
+interface VerifyOtpBody {
   email: string
   otp: string
 }
 
-interface ResetPasswordBody{
-  email:string
+interface ResetPasswordBody {
+  email: string
   password: string
   confirmPassword: string
 }
 
-interface Toggle2FABody{
+interface Toggle2FABody {
   password: string;
 }
 
-interface Verify2FABody{
+interface Verify2FABody {
   email: string;
   twoFAToken: string;
   otp: string;
@@ -73,11 +73,11 @@ const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>,
   const verificationToken = generateEmailVerificationToken(user.id);
 
   //send email with verification link
-  await sendVerificationEmail(user.email,user.name, verificationToken);
+  await sendVerificationEmail(user.email, user.name, verificationToken);
 
   return res
     .status(201)
-    .json(new ApiResponse(201,"Verification link send to you registered email"));
+    .json(new ApiResponse(201, "Verification link send to you registered email"));
 });
 
 
@@ -103,9 +103,9 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
 
     return res
       .status(200).json(
-        new ApiResponse(200,{verified:true},"Email verified Successfully")
+        new ApiResponse(200, { verified: true }, "Email verified Successfully")
       )
-    
+
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       throw new ApiError(401, "Verification Token expired");
@@ -139,7 +139,7 @@ const resendVerification = asyncHandler(async (req: Request, res: Response) => {
   const verificationToken = generateEmailVerificationToken(user.id);
 
   await sendVerificationEmail(user.email, user.name, verificationToken);
-  
+
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Verification link sent to your email"));
@@ -231,7 +231,7 @@ const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserBody>, res: 
         requiresTwoFA: true,
         twoFAToken,
         email: user.email
-      },"2FA verification required")
+      }, "2FA verification required")
     );
   }
 
@@ -468,7 +468,7 @@ const resetPassword = asyncHandler(async (req: Request<{}, {}, ResetPasswordBody
 
 
 //logout user
-const logoutUser = asyncHandler(async (req:Request, res: Response) => {
+const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authoorized");
@@ -482,7 +482,7 @@ const logoutUser = asyncHandler(async (req:Request, res: Response) => {
 
   if (!user) throw new ApiError(401, "Error in user logout process ");
 
- const options: CookieOptions = {
+  const options: CookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
@@ -536,9 +536,72 @@ const fetchCurrentUser = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, { user: safeUser }, "Current user fetched successfully"));
 });
 
+
+const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
+  const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Refresh token not provided");
+  }
+
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET as string
+    ) as { id: string };
+
+    // Find user and check if refresh token matches
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        refreshToken: true,
+        isEmailverified: true,
+      }
+    });
+
+    if (!user) {
+      throw new ApiError(404, "Invalid refresh token");
+    }
+
+    // Verify that the token in DB matches the incoming token
+    if (user.refreshToken !== incomingRefreshToken) {
+      throw new ApiError(401, "Refresh token is invalid or has been used");
+    }
+
+    // Generate new tokens
+    const { accessToken, refreshToken: newRefreshToken } = await generateTokens(user.id);
+
+    const options: CookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newRefreshToken },
+          "Access token refreshed successfully"
+        )
+      );
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      throw new ApiError(401, "Refresh token expired. Please login again");
+    }
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(401, "Invalid refresh token");
+  }
+});
+
 //todo
 //resend otp
-//change email
 //change name
 
 
@@ -553,5 +616,6 @@ export {
   logoutUser,
   toggle2FA,
   verify2FA,
-  fetchCurrentUser
+  fetchCurrentUser,
+  refreshAccessToken
 };

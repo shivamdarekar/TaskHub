@@ -68,6 +68,21 @@ export default function LoginPage() {
     }
   };
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchUserWorkspaces()).unwrap().then((workspaces) => {
+        if (workspaces.length > 0) {
+          router.push(`/workspace/${workspaces[0].id}`);
+        } else {
+          router.push("/workspace/create");
+        }
+      }).catch((err) => {
+        console.error("Failed to fetch workspaces:", err);
+      });
+    }
+  }, [isAuthenticated, router, dispatch]);
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {

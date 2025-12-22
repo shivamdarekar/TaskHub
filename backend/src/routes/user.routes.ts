@@ -18,6 +18,7 @@ import {
   toggle2FA,
   verify2FA,
   fetchCurrentUser,
+  refreshAccessToken
 } from "../controllers/user.controller";
 import { verifyJWT } from "../middleware/auth.middleware";
 
@@ -39,6 +40,8 @@ router.post("/forgot-password", sendPassResetOtp);
 router.post("/verify-otp", verifyOtp);
 
 router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
+
+router.post("/refresh-token", refreshAccessToken);
 
 //protected route
 router.post("/toggle-2fa", verifyJWT, validate(toggle2FASchema), toggle2FA);

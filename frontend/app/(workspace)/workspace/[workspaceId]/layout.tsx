@@ -96,7 +96,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
             <WorkspaceSidebar workspaceId={workspaceId as string} />
-            <main className="flex-1 overflow-auto lg:ml-0 pt-16 md:pt-0">
+            <main className="flex-1 min-w-0 overflow-auto lg:ml-0 pt-16 md:pt-0">
                 {children}
             </main>
         </div>

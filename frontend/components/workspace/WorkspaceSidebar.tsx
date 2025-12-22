@@ -339,31 +339,43 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
                     No projects yet
                   </p>
                 ) : (
-                  projects.map((project) => {
-                    const isActive = params.projectId === project.id;
-                    return (
+                  <>
+                    {projects.slice(0, 5).map((project) => {
+                      const isActive = params.projectId === project.id;
+                      return (
+                        <button
+                          key={project.id}
+                          onClick={() =>
+                            router.push(
+                              `/workspace/${workspaceId}/projects/${project.id}`
+                            )
+                          }
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors group",
+                            isActive
+                              ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 shadow-sm"
+                              : "text-gray-700 hover:bg-gray-100"
+                          )}
+                        >
+                          <FolderKanban className={cn(
+                            "h-4 w-4 shrink-0",
+                            isActive ? "text-blue-600" : "text-gray-500 group-hover:text-blue-600"
+                          )} />
+                          <span className="truncate">{project.name}</span>
+                        </button>
+                      );
+                    })}
+                    
+                    {projects.length > 5 && (
                       <button
-                        key={project.id}
-                        onClick={() =>
-                          router.push(
-                            `/workspace/${workspaceId}/projects/${project.id}`
-                          )
-                        }
-                        className={cn(
-                          "w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors group",
-                          isActive
-                            ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 shadow-sm"
-                            : "text-gray-700 hover:bg-gray-100"
-                        )}
+                        onClick={() => router.push(`/workspace/${workspaceId}/projects`)}
+                        className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors text-blue-600 hover:bg-blue-50 font-medium"
                       >
-                        <FolderKanban className={cn(
-                          "h-4 w-4 shrink-0",
-                          isActive ? "text-blue-600" : "text-gray-500 group-hover:text-blue-600"
-                        )} />
-                        <span className="truncate">{project.name}</span>
+                        <LayoutGrid className="h-4 w-4 shrink-0" />
+                        <span>Show All ({projects.length})</span>
                       </button>
-                    );
-                  })
+                    )}
+                  </>
                 )}
               </nav>
             )}

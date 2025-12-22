@@ -57,23 +57,26 @@ export default function WorkspaceDashboardPage() {
       />
 
       {/* MAIN CONTENT */}
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
         {/* STATS CARDS */}
         <div className="animate-in slide-in-from-bottom-4 duration-700 delay-300">
           <StatsCards stats={overview?.stats} loading={overviewLoading} />
         </div>
 
         {/* CHARTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
           <TaskStatusChart 
             data={overview?.stats?.taskByStatus} 
             loading={overviewLoading} 
           />
-          <TaskTrendChart loading={overviewLoading} />
+          <TaskTrendChart 
+            data={overview?.stats?.taskCreationTrend} 
+            loading={overviewLoading} 
+          />
         </div>
 
         {/* RECENT MEMBERS & PROJECTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-700">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-700">
           <RecentMembers 
             members={overview?.recentMembers} 
             loading={overviewLoading} 

@@ -12,6 +12,11 @@ interface Project{
     fileCount: number;
     createdAt: string;
     updatedAt: string;
+    _count?: {
+        tasks: number;
+        comments: number;
+        files: number;
+    };
 }
 
 interface ProjectMember{
@@ -121,7 +126,7 @@ const initialState: ProjectState = {
     overviewLoading: false,
     activities: [],
     activitiesLoading: false,
-    recentActivities: [],  
+    recentActivities: [],
     recentActivitiesLoading: false,
     members: [],
     membersLoading: false,

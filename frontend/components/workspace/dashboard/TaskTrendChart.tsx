@@ -4,10 +4,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TaskTrendChartProps {
+  data?: Array<{ date: string; tasks: number }>;
   loading?: boolean;
 }
 
-export default function TaskTrendChart({ loading }: TaskTrendChartProps) {
+export default function TaskTrendChart({ data, loading }: TaskTrendChartProps) {
   if (loading) {
     return (
       <Card>
@@ -22,20 +23,7 @@ export default function TaskTrendChart({ loading }: TaskTrendChartProps) {
     );
   }
 
-  const getLast7Days = () => {
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      days.push({
-        date: date.toISOString().split('T')[0],
-        tasks: Math.floor(Math.random() * 10) + 1,
-      });
-    }
-    return days;
-  };
-
-  const chartData = getLast7Days();
+  const chartData = data || [];
 
   return (
     <Card className="w-full overflow-hidden">
@@ -44,38 +32,44 @@ export default function TaskTrendChart({ loading }: TaskTrendChartProps) {
         <p className="text-sm text-gray-500 mt-1">Task creation trend (last 7 days)</p>
       </CardHeader>
       <CardContent className="w-full overflow-hidden pb-6 px-2">
-        <div className="w-full h-[300px]">
-          <ChartContainer
-            config={{
-              tasks: {
-                label: "Tasks",
-                color: "#3b82f6",
-              },
-            }}
-            className="h-full w-full"
-          >
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line
-                type="monotone"
-                dataKey="tasks"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#3b82f6" }}
-              />
-            </LineChart>
-          </ChartContainer>
-        </div>
+        {chartData.length === 0 ? (
+          <div className="h-[300px] flex items-center justify-center text-gray-500">
+            No task trend data available
+          </div>
+        ) : (
+          <div className="w-full h-[300px]">
+            <ChartContainer
+              config={{
+                tasks: {
+                  label: "Tasks",
+                  color: "#3b82f6",
+                },
+              }}
+              className="h-full w-full"
+            >
+              <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="tasks"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: "#3b82f6" }}
+                />
+              </LineChart>
+            </ChartContainer>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

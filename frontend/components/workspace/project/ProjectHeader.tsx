@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Settings } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import CreateTaskDialog from "@/components/workspace/task/CreateTaskDialog";
 
 interface ProjectHeaderProps {
   project: {
@@ -9,20 +12,39 @@ interface ProjectHeaderProps {
     description?: string;
   };
   members: Array<{
-    userId: string;
     workspaceMemberId: string;
+    userId: string;
     name: string;
     email: string;
+    lastLogin: string | null;
+    accessLevel: string;
+    joinedAt: string;
   }>;
   workspaceId: string;
+  activeTab?: string;
 }
 
 export default function ProjectHeader({ 
   project, 
   members,
-  workspaceId
+  workspaceId,
+  activeTab = "dashboard"
 }: ProjectHeaderProps) {
+  const router = useRouter();
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
 
+  const tabs = [
+    { id: "dashboard", label: "Dashboard", path: "" },
+    { id: "table", label: "Table", path: "/table" },
+    { id: "kanban", label: "Kanban", path: "/kanban" },
+    { id: "calendar", label: "Calendar", path: "/calendar" },
+    { id: "timeline", label: "Timeline", path: "/timeline" },
+  ];
+
+  const handleTabClick = (tab: typeof tabs[0]) => {
+    const basePath = `/workspace/${workspaceId}/projects/${project.id}`;
+    router.push(`${basePath}${tab.path}`);
+  };
 
   const getProjectColor = (name: string) => {
     const colors = [
@@ -72,7 +94,10 @@ export default function ProjectHeader({
         </div>
         
         <div className="flex items-center gap-3">
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setCreateTaskOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Task
           </Button>
@@ -85,22 +110,26 @@ export default function ProjectHeader({
 
       {/* NAVIGATION TABS */}
       <div className="flex items-center gap-6 border-b border-gray-200">
-        <button className="text-sm font-medium pb-3 text-blue-600 border-b-2 border-blue-600">
-          Dashboard
-        </button>
-        <button className="text-sm font-medium pb-3 text-gray-500 hover:text-gray-900">
-          Table
-        </button>
-        <button className="text-sm font-medium pb-3 text-gray-500 hover:text-gray-900">
-          Kanban
-        </button>
-        <button className="text-sm font-medium pb-3 text-gray-500 hover:text-gray-900">
-          Calendar
-        </button>
-        <button className="text-sm font-medium pb-3 text-gray-500 hover:text-gray-900">
-          Timeline
-        </button>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabClick(tab)}
+            className={`text-sm font-medium pb-3 transition-colors ${
+              activeTab === tab.id
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
+
+      <CreateTaskDialog
+        open={createTaskOpen}
+        onOpenChange={setCreateTaskOpen}
+        projectId={project.id}
+      />
     </div>
   );
 }

@@ -306,6 +306,33 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
         }
     });
 
+    // Task creation trend (last 7 days)
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        
+        const taskCount = await prisma.task.count({
+            where: {
+                project: {
+                    workspaceId,
+                },
+                createdAt: {
+                    gte: date,
+                    lt: nextDate,
+                },
+            },
+        });
+        
+        last7Days.push({
+            date: date.toISOString().split('T')[0],
+            tasks: taskCount,
+        });
+    }
+
     const responseData = {
         workspace: {
             id: workspace.id,
@@ -328,6 +355,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
                 status: t.status,
                 count: t._count.status,
             })),
+            taskCreationTrend: last7Days,
         },
         recentMembers: recentMembers.map((m) => ({
             id: m.User.id,

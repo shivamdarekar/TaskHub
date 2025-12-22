@@ -74,8 +74,16 @@ export default function RecentProjects({
 
   return (
     <Card className="h-fit">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-2xl font-semibold">Recent Projects</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => window.location.href = `/workspace/${workspaceId}/projects`}
+          className="text-xs"
+        >
+          View All
+        </Button>
       </CardHeader>
       <CardContent className="pb-6">
         <div className="space-y-3">

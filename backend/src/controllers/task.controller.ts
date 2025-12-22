@@ -165,10 +165,10 @@ export const getProjectTasks = asyncHandler(async (req: Request, res: Response) 
     if (status) filters.status = status as TaskStatus;
     if (priority) filters.priority = priority as TaskPriority;
     if (assigneeId) filters.assigneeId = assigneeId as string;
-    if (search) {
+    if (search && typeof search === 'string' && search.trim()) {
         filters.OR = [
-            { title: { contains: search as string, mode: 'insensitive' } },
-            { description: { contains: search as string, mode: 'insensitive' } }
+            { title: { contains: search.trim(), mode: 'insensitive' } },
+            { description: { contains: search.trim(), mode: 'insensitive' } }
         ];
     }
 
@@ -379,6 +379,7 @@ export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) =
     select: {
       id: true,
       title: true,
+      description:true,
       status: true,
       priority: true,
       position: true,
@@ -386,6 +387,7 @@ export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) =
       assignedTo: {
         select: { id: true, name: true },
       },
+      dueDate: true,
     },
   });
 

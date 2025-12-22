@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { Bell, Moon, Plus } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, FolderKanban, Calendar, AlertCircle } from "lucide-react";
 import { fetchWorkspaceProjects } from "@/redux/slices/projectSlice";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
+import CreateProjectDialog from "@/components/workspace/CreateProjectDialog";
 
 export default function ProjectsListPage() {
   const params = useParams();
@@ -17,8 +18,8 @@ export default function ProjectsListPage() {
   const dispatch = useAppDispatch();
   const workspaceId = params.workspaceId as string;
 
-  const { user } = useAppSelector((state) => state.auth);
   const { projects, projectsLoading, error } = useAppSelector((state) => state.project);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Fetch projects when workspaceId changes
   useEffect(() => {
@@ -76,38 +77,20 @@ export default function ProjectsListPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-50 animate-in fade-in-0 duration-500">
-      {/* HEADER */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6 animate-in slide-in-from-top-4 duration-700">
-        <div className="flex items-center justify-between">
-          <div className="animate-in slide-in-from-left-4 duration-700 delay-100">
-            <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage and organize your workspace projects
-            </p>
-          </div>
-          <div className="flex items-center gap-3 animate-in slide-in-from-right-4 duration-700 delay-200">
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => router.push(`/workspace/${workspaceId}/projects/create`)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
-            <Button variant="ghost" size="icon" className="h-10 w-10">
-              <Moon className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-10 w-10">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-      </div>
+    <div className="flex-1 overflow-auto bg-gray-50">
+      <WorkspaceNavbar 
+        title="Projects"
+        subtitle="Manage and organize your workspace projects"
+        actions={
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
+          </Button>
+        }
+      />
 
       {/* MAIN CONTENT */}
       <div className="p-8">
@@ -124,7 +107,7 @@ export default function ProjectsListPage() {
                 </p>
                 <Button 
                   className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => router.push(`/workspace/${workspaceId}/projects/create`)}
+                  onClick={() => setIsCreateDialogOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Project
@@ -153,7 +136,7 @@ export default function ProjectsListPage() {
                         {project.name}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        {project.taskCount || 0} {(project.taskCount || 0) === 1 ? 'task' : 'tasks'}
+                        {project._count?.tasks || project.taskCount || 0} {((project._count?.tasks || project.taskCount || 0) === 1) ? 'task' : 'tasks'}
                       </p>
                     </div>
                   </div>
@@ -170,6 +153,12 @@ export default function ProjectsListPage() {
           </div>
         )}
       </div>
+
+      <CreateProjectDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        workspaceId={workspaceId}
+      />
     </div>
   );
 }

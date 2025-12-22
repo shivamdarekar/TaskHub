@@ -38,6 +38,10 @@ interface WorkspaceOverviewStats{
         status: string,
         count: number
     }[];
+    taskCreationTrend?: {
+        date: string;
+        tasks: number;
+    }[];
 }
 
 interface WorkspaceOverviewMember{

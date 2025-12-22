@@ -37,4 +37,6 @@ router.patch("/project/:projectId/update/:taskId", verifyTaskExists, canModifyTa
 
 router.delete("/project/:projectId/delete/:taskId", verifyTaskExists, canModifyTask, deleteTask);
 
+router.patch("/project/:projectId/kanban/:taskId", verifyTaskExists, canModifyTask, moveTaskKanban);
+
 export default router;
