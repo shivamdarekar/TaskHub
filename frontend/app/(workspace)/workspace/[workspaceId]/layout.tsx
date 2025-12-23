@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
@@ -28,12 +28,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
     const [checkingWorkspaces, setCheckingWorkspaces] = useState(true);
     const [hasFetchedWorkspace, setHasFetchedWorkspace] = useState(false);
+    const hasRedirectedToLoginRef = useRef(false);
 
     useEffect(() => {
-        if (!authLoading && !isAuthenticated) {
+        if (!authLoading && !isAuthenticated && !hasRedirectedToLoginRef.current) {
+            hasRedirectedToLoginRef.current = true;
             router.replace("/login");
         }
-    }, [authLoading, isAuthenticated]);
+    }, [authLoading, isAuthenticated, router]);
 
     //Fetch user workspaces & ensure user has at least one
     useEffect(() => {

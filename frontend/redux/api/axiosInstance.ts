@@ -76,9 +76,19 @@ axiosInstance.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError, null);
 
-        // Clear auth state and redirect to login
+        // Only redirect to login if on a protected page
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          const currentPath = window.location.pathname;
+          const publicPages = ['/', '/pricing', '/contact'];
+          const isPublicPage = publicPages.includes(currentPath);
+          
+          // Don't redirect if on public marketing pages
+          if (!isPublicPage && !currentPath.startsWith('/login') && 
+              !currentPath.startsWith('/register') && 
+              !currentPath.startsWith('/forgot-password') &&
+              !currentPath.startsWith('/verify-email')) {
+            window.location.href = "/login";
+          }
         }
 
         return Promise.reject(refreshError);

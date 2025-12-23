@@ -58,7 +58,7 @@ export default function ProjectDashboardPage() {
 
 
         {/* MAIN CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-in slide-in-from-bottom-4 duration-700 delay-500">
           {/* TASK DISTRIBUTION */}
           <div className="lg:col-span-1">
             <TaskDistributionChart

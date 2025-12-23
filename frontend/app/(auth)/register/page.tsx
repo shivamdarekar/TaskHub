@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,22 +27,28 @@ export default function RegisterPage() {
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
-  if (isAuthenticated) {
+  if (isAuthenticated && !hasRedirectedRef.current) {
+    hasRedirectedRef.current = true;
     // Fetch workspaces and redirect
     dispatch(fetchUserWorkspaces()).unwrap().then((workspaces) => {
       if (workspaces.length > 0) {
-        router.push(`/workspace/${workspaces[0].id}`);
+        router.replace(`/workspace/${workspaces[0].id}`);
       } else {
-        router.push("/workspace/create");
+        router.replace("/workspace/create");
       }
+    }).catch((err) => {
+      console.error("Failed to fetch workspaces:", err);
+      hasRedirectedRef.current = false; // Allow retry on error
     });
   }
 }, [isAuthenticated, router, dispatch]);
 
   useEffect(() => {
     return () => {
+      hasRedirectedRef.current = false; // Reset on unmount
       dispatch(clearError());
     }
   }, [dispatch]);

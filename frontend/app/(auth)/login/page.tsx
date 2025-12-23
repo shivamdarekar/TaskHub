@@ -43,6 +43,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [twoFaSubmitting, setTwoFaSubmitting] = useState(false);
   const isMountedRef = useRef(true);
+  const hasRedirectedRef = useRef(false);
 
   //handle navigation after authentication
   const handlePostLoginNavigation = async () => {
@@ -52,9 +53,9 @@ export default function LoginPage() {
       const result = await dispatch(fetchUserWorkspaces()).unwrap();
       if (!isMountedRef.current) return;
       if (result.length == 0) {
-        router.push("/workspace/create")
+        router.replace("/workspace/create")
       } else {
-        router.push(`/workspace/${result[0].id}`);
+        router.replace(`/workspace/${result[0].id}`);
       }
     } catch (err) {
       if (isMountedRef.current) {
@@ -68,25 +69,28 @@ export default function LoginPage() {
     }
   };
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (only once)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !loading && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       dispatch(fetchUserWorkspaces()).unwrap().then((workspaces) => {
         if (workspaces.length > 0) {
-          router.push(`/workspace/${workspaces[0].id}`);
+          router.replace(`/workspace/${workspaces[0].id}`);
         } else {
-          router.push("/workspace/create");
+          router.replace("/workspace/create");
         }
       }).catch((err) => {
         console.error("Failed to fetch workspaces:", err);
+        hasRedirectedRef.current = false; // Allow retry on error
       });
     }
-  }, [isAuthenticated, router, dispatch]);
+  }, [isAuthenticated, loading, router, dispatch]);
 
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      hasRedirectedRef.current = false; // Reset on unmount
       dispatch(clearError());
     };
   }, [dispatch]);

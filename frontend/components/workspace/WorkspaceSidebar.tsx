@@ -18,7 +18,7 @@ import {
   User,
   Menu,
   X,
-  ChevronsUpDown
+  ChevronsUpDown,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

@@ -26,6 +26,24 @@ interface UpdateTaskBody {
     assigneeId?: string;
 }
 
+const formatStatusForDisplay = (status: TaskStatus): string => {
+    const statusMap: Record<TaskStatus, string> = {
+        [TaskStatus.TODO]: "To Do",
+        [TaskStatus.IN_PROGRESS]: "In Progress",
+        [TaskStatus.IN_REVIEW]: "In Review",
+        [TaskStatus.COMPLETED]: "Completed",
+        [TaskStatus.BACKLOG]: "Backlog",
+        // Add BLOCKED if you have it in your enum
+    };
+    return statusMap[status] || status;
+};
+
+// helper function to truncate long titles for activity logs
+const truncateTitle = (title: string, maxLength: number = 50): string => {
+    return title.length > maxLength ? `${title.substring(0, maxLength - 3)}...` : title;
+};
+
+
 export const createTask = asyncHandler(async (req: Request, res: Response) => {
     const { title, description, status, priority, startDate, dueDate, assigneeId }: CreateTaskBody = req.body;
     const { projectId } = req.params;
@@ -416,10 +434,12 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
 
     const task = await prisma.task.findUnique({
         where: { id: taskId },
-        select: { id: true, status: true, position: true, projectId: true }
+        select: { id: true, title:true, status: true, position: true, projectId: true }
     });
 
     if (!task) throw new ApiError(404, "Task not found");
+
+    const oldStatus = task.status
 
     await prisma.$transaction(async (tx) => {
         //close gap in old column
@@ -452,6 +472,15 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
         });
     });
 
+    if (oldStatus !== toStatus) {
+        logActivity({
+            type: ActivityType.TASK_STATUS_CHANGED,
+            description: `Moved task "${truncateTitle(task.title)}" from ${formatStatusForDisplay(oldStatus)} to ${formatStatusForDisplay(toStatus)}`,
+            userId,
+            projectId: task.projectId
+        }).catch(console.error);
+    }
+    
     return res.status(200).json(
         new ApiResponse(200, {}, "Task move successfully")
     )
