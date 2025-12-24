@@ -38,7 +38,7 @@ export default function ProjectHeader({
     { id: "table", label: "Table", path: "/table" },
     { id: "kanban", label: "Kanban", path: "/kanban" },
     { id: "calendar", label: "Calendar", path: "/calendar" },
-    { id: "timeline", label: "Timeline", path: "/timeline" },
+    { id: "timeline", label: "Activity", path: "/activity" },
   ];
 
   const handleTabClick = (tab: typeof tabs[0]) => {

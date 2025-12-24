@@ -7,6 +7,7 @@ import { ArrowUpDown, MoreHorizontal, Paperclip, ChevronLeft, ChevronRight } fro
 import { Task, TaskStatus, TaskPriority } from "@/redux/slices/taskSlice";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter, useParams } from "next/navigation";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -65,7 +66,16 @@ export default function TaskTable({
   onSort,
   visibleColumns = ["title", "status", "priority", "createdAt", "dueDate", "assignedTo", "attachments", "actions"]
 }: TaskTableProps) {
+  const router = useRouter();
+  const params = useParams();
+  const workspaceId = params.workspaceId as string;
+  const projectId = params.projectId as string;
+  
   const isColumnVisible = (columnId: string) => visibleColumns.includes(columnId);
+  
+  const handleTaskClick = (taskId: string) => {
+    router.push(`/workspace/${workspaceId}/projects/${projectId}/tasks/${taskId}`);
+  };
   
   if (loading) {
     return (
@@ -137,7 +147,10 @@ export default function TaskTable({
                 <TableRow key={task.id}>
                   {isColumnVisible("title") && (
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2 md:gap-3">
+                      <div 
+                        className="flex items-center gap-2 md:gap-3 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleTaskClick(task.id)}
+                      >
                         <div className="h-6 w-6 md:h-8 md:w-8 bg-blue-600 rounded flex items-center justify-center text-white text-xs md:text-sm font-medium shrink-0">
                           {task.title.charAt(0).toUpperCase()}
                         </div>

@@ -125,7 +125,7 @@ export const getRecentProjectComments = asyncHandler(
         if (!projectId) throw new ApiError(400, "Project ID is required");
 
         const limit = Math.min(
-            parseInt(req.query.limit as string) || 15,
+            parseInt(req.query.limit as string) || 10,
             50
         );
 
@@ -184,7 +184,8 @@ export const getTaskComments = asyncHandler(async (req: Request, res: Response) 
 
 
 export const updateComment = asyncHandler(async (req: Request, res: Response) => {
-    const { commentId, content } = req.body;
+    const { commentId } = req.params;
+    const { content } = req.body;
     const userId = req.user?.id;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
@@ -234,7 +235,7 @@ export const updateComment = asyncHandler(async (req: Request, res: Response) =>
 
 
 export const deleteComment = asyncHandler(async (req: Request, res: Response) => {
-    const { commentId } = req.body;
+    const { commentId } = req.params;
     const userId = req.user?.id;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
@@ -269,3 +270,4 @@ export const deleteComment = asyncHandler(async (req: Request, res: Response) =>
         new ApiResponse(200, {}, "Comment deleted successfully")
     );
 });
+

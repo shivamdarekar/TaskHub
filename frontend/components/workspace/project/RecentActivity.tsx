@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 interface Activity {
   id: string;
@@ -16,6 +17,8 @@ interface RecentActivityProps {
 }
 
 export default function RecentActivity({ activities, loading }: RecentActivityProps) {
+  const router = useRouter();
+  
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -56,7 +59,7 @@ export default function RecentActivity({ activities, loading }: RecentActivityPr
     );
   }
 
-  const displayActivities = activities?.slice(0, 15) || [];
+  const displayActivities = activities?.slice(0, 10) || [];
 
   const getActivityIcon = (action: string) => {
     const colors = [
@@ -112,7 +115,10 @@ export default function RecentActivity({ activities, loading }: RecentActivityPr
         
         {displayActivities.length > 0 && (
           <div className="mt-4 pt-3 border-t border-gray-100">
-            <button className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer">
+            <button 
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer"
+              onClick={() => router.push('./activity')}
+            >
               View all activity
             </button>
           </div>

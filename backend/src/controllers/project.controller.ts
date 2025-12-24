@@ -500,7 +500,7 @@ export const getProjectActivities = asyncHandler(async (req: Request, res: Respo
 
 export const getRecentProjectActivities = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const limit = Math.min(parseInt(req.query.limit as string) || 15, 50);
+  const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
     if (!projectId) throw new ApiError(401, "ProjectId is required");
     

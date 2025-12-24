@@ -58,7 +58,7 @@ export default function RecentComments({ comments, loading }: RecentCommentsProp
     );
   }
 
-  const displayComments = comments?.slice(0, 5) || [];
+  const displayComments = comments?.slice(0, 10) || [];
 
   const getUserColor = (name: string) => {
     const colors = [

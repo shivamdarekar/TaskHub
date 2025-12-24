@@ -73,7 +73,7 @@ export default function TaskTableFilters({ filters, onFilterChange, members, onC
             <Input
               placeholder="Filter tasks..."
               value={filters.search}
-              onChange={(e) => onFilterChange({ search: e.target.value })}
+              onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
               className="pl-10 text-sm"
             />
           </div>
@@ -82,7 +82,7 @@ export default function TaskTableFilters({ filters, onFilterChange, members, onC
             {/* Status Filter */}
             <Select
               value={filters.status || "all"}
-              onValueChange={(value) => onFilterChange({ status: value === "all" ? undefined : value })}
+              onValueChange={(value) => onFilterChange({ ...filters, status: value === "all" ? undefined : value })}
             >
               <SelectTrigger className="w-full sm:w-32 md:w-40 text-sm">
                 <SelectValue placeholder="Status" />
@@ -100,7 +100,7 @@ export default function TaskTableFilters({ filters, onFilterChange, members, onC
             {/* Priority Filter */}
             <Select
               value={filters.priority || "all"}
-              onValueChange={(value) => onFilterChange({ priority: value === "all" ? undefined : value })}
+              onValueChange={(value) => onFilterChange({ ...filters, priority: value === "all" ? undefined : value })}
             >
               <SelectTrigger className="w-full sm:w-32 md:w-40 text-sm">
                 <SelectValue placeholder="Priority" />

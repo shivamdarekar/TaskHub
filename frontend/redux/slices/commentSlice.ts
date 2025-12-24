@@ -56,6 +56,7 @@ const initialState: CommentState = {
 };
 
 interface AddCommentData {
+    projectId: string;
     taskId: string;
     content: string;
 }
@@ -81,9 +82,9 @@ export const addComment = createAsyncThunk(
     "comment/addComment",
     async (data: AddCommentData, { rejectWithValue }) => {
         try {
-            const { taskId, content } = data;
+            const { projectId, taskId, content } = data;
             const response = await axiosInstance.post(
-                `/api/v1/comments/${taskId}`,
+                `/api/v1/comments/project/${projectId}/task/${taskId}`,
                 { content }
             );
             return response.data.data.comment;
@@ -130,10 +131,10 @@ export const getRecentProjectComments = createAsyncThunk(
 // Get Task Comments
 export const getTaskComments = createAsyncThunk(
     "comment/getTaskComments",
-    async (taskId: string, { rejectWithValue }) => {
+    async ({ projectId, taskId }: { projectId: string; taskId: string }, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(
-                `/api/v1/comments/task/${taskId}`
+                `/api/v1/comments/project/${projectId}/task/${taskId}/get`
             );
             return response.data.data.comments;
         } catch (error: unknown) {
@@ -148,8 +149,8 @@ export const updateComment = createAsyncThunk(
     async (data: UpdateCommentData, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.patch(
-                `/api/v1/comments/update`,
-                data
+                `/api/v1/comments/${data.commentId}/update`,
+                { content: data.content }
             );
             return response.data.data.comment;
         } catch (error: unknown) {
@@ -163,9 +164,7 @@ export const deleteComment = createAsyncThunk(
     "comment/deleteComment",
     async (commentId: string, { rejectWithValue }) => {
         try {
-            await axiosInstance.delete(`/api/v1/comments/delete`, {
-                data: { commentId }
-            });
+            await axiosInstance.delete(`/api/v1/comments/${commentId}/delete`);
             return commentId;
         } catch (error: unknown) {
             return rejectWithValue(handleAxiosError(error, "Failed to delete comment"));
@@ -190,11 +189,11 @@ const commentSlice = createSlice({
         clearRecentComments: (state) => {
             state.recentComments = [];
         },
-        // Optimistic add comment
+        //  add comment
         addCommentOptimistic: (state, action: PayloadAction<Comment>) => {
             state.taskComments.unshift(action.payload);
         },
-        // Optimistic update comment
+        // update comment
         updateCommentOptimistic: (state, action: PayloadAction<{ commentId: string; content: string }>) => {
             const comment = state.taskComments.find(c => c.id === action.payload.commentId);
             if (comment) {
@@ -205,7 +204,7 @@ const commentSlice = createSlice({
                 projectComment.content = action.payload.content;
             }
         },
-        // Optimistic delete comment
+        // delete comment
         deleteCommentOptimistic: (state, action: PayloadAction<string>) => {
             state.taskComments = state.taskComments.filter(c => c.id !== action.payload);
             state.comments = state.comments.filter(c => c.id !== action.payload);

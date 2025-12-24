@@ -11,7 +11,7 @@ export const store = configureStore({
         workspace: workspaceReducer,
         project: projectReducer,
         task: taskReducer,
-        comment: commentReducer
+        comment: commentReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

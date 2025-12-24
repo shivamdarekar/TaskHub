@@ -194,9 +194,9 @@ export default function CalendarPage() {
                         className="cursor-pointer"
                         onClick={() => setSelectedTask(task)}
                       >
-                        <div className="flex items-center gap-1 p-1 rounded text-xs bg-white border hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-1 p-1 rounded text-sm bg-white border hover:shadow-sm transition-shadow">
                           <div className={cn("w-2 h-2 rounded-full", getPriorityColor(task.priority))} />
-                          <span className="truncate flex-1">{task.title}</span>
+                          <span className="truncate flex-1 font-medium">{task.title}</span>
                         </div>
                       </div>
                     ))}

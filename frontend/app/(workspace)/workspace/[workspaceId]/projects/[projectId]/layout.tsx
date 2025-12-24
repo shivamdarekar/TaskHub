@@ -33,7 +33,7 @@ export default function ProjectLayout({
     if (pathname.includes('/table')) return 'table';
     if (pathname.includes('/kanban')) return 'kanban';
     if (pathname.includes('/calendar')) return 'calendar';
-    if (pathname.includes('/timeline')) return 'timeline';
+    if (pathname.includes('/activity')) return 'timeline';
     return 'dashboard';
   };
 
