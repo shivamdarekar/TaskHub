@@ -30,6 +30,7 @@ export default function ProjectLayout({
 
   // Determine active tab from pathname
   const getActiveTab = () => {
+    if (pathname.includes('/tasks/')) return 'table';
     if (pathname.includes('/table')) return 'table';
     if (pathname.includes('/kanban')) return 'kanban';
     if (pathname.includes('/calendar')) return 'calendar';

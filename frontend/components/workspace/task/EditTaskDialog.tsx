@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAppDispatch } from "@/redux/hooks";
-import { updateTask, TaskStatus, TaskPriority, Task } from "@/redux/slices/taskSlice";
+import { updateTask, TaskStatus, TaskPriority, Task, getKanbanTasks } from "@/redux/slices/taskSlice";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,10 @@ interface EditTaskDialogProps {
   task: Task;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onTaskUpdated?: () => void;
 }
 
-export default function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps) {
+export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: EditTaskDialogProps) {
   const dispatch = useAppDispatch();
   
   const [formData, setFormData] = useState({
@@ -39,6 +40,12 @@ export default function EditTaskDialog({ task, open, onOpenChange }: EditTaskDia
 
     setIsSubmitting(true);
     try {
+      console.log('Updating task with:', {
+        projectId: task.projectId,
+        taskId: task.id,
+        ...formData
+      });
+      const originalStatus = task.status;
       await dispatch(updateTask({
         projectId: task.projectId,
         taskId: task.id,
@@ -49,10 +56,17 @@ export default function EditTaskDialog({ task, open, onOpenChange }: EditTaskDia
         dueDate: formData.dueDate || undefined,
       })).unwrap();
       
+      // Refresh kanban board if status changed
+      if (originalStatus !== formData.status) {
+        dispatch(getKanbanTasks({ projectId: task.projectId }));
+      }
+      
       toast.success("Task updated successfully");
+      onTaskUpdated?.();
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to update task",{duration:1500});
+      console.error('Task update error:', error);
+      toast.error(typeof error === 'string' ? error : "Failed to update task", {duration:1500});
     } finally {
       setIsSubmitting(false);
     }

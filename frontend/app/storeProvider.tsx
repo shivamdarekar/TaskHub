@@ -2,7 +2,8 @@
 
 import {useRef} from "react";
 import {Provider} from "react-redux";
-import { store } from "@/redux/store";
+import { PersistGate } from "redux-persist/integration/react";
+import { store, persistor } from "@/redux/store";
 
 export default function StoreProvider({
     children,
@@ -10,6 +11,13 @@ export default function StoreProvider({
         children: React.ReactNode;
     }) {
     const storeRef = useRef(store);
+    const persistorRef = useRef(persistor);
 
-    return <Provider store={storeRef.current}>{children}</Provider>;
+    return (
+        <Provider store={storeRef.current}>
+            <PersistGate loading={null} persistor={persistorRef.current}>
+                {children}
+            </PersistGate>
+        </Provider>
+    );
 }

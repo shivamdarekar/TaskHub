@@ -132,7 +132,7 @@ model Task {
   id          String       @id @default(uuid())
   title       String
   description String?
-  documentation String?
+  documentation String? @db.Text
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(LOW)
   startDate   DateTime?

@@ -109,4 +109,22 @@ export const createTaskSchema = z.object({
     assigneeId: z.string().uuid("Invalid assignee ID format").optional().nullable(),
 });
 
-export const updateTaskSchema = createTaskSchema.partial();
+export const updateTaskSchema = z.object({
+    title: z.string()
+        .trim()
+        .min(3, "Task title must be at least 3 characters")
+        .max(200, "Task title cannot exceed 200 characters")
+        .optional(),
+    description: z.string()
+        .trim()
+        .max(2000, "Description cannot exceed 2000 characters")
+        .optional()
+        .nullable(),
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        .optional(),
+    status: z.enum(["TODO", "IN_PROGRESS", "IN_REVIEW", "COMPLETED", "BACKLOG"])
+        .optional(),
+    dueDate: z.string().optional().nullable(),
+    startDate: z.string().optional().nullable(),
+    assigneeId: z.string().uuid("Invalid assignee ID format").optional().nullable(),
+});
