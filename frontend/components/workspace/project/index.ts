@@ -3,3 +3,5 @@ export { default as ProjectStatsCards } from './ProjectStatsCards';
 export { default as TaskDistributionChart } from './TaskDistributionChart';
 export { default as RecentActivity } from './RecentActivity';
 export { default as RecentComments } from './RecentComments';
+export { default as EditProjectDialog } from './EditProjectDialog';
+export { default as ProjectDocumentation } from './ProjectDocumentation';

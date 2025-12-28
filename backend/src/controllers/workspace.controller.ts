@@ -3,11 +3,17 @@ import { asyncHandler } from "../utils/asynchandler";
 import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/apiResponse";
 import prisma from "../config/prisma";
+import { logActivity } from "../services/activityLogger";
 
 interface workspaceBody{
     name: string;
     description?: string;
     ownerId: string;
+}
+
+interface UpdateWorkspaceBody{
+    name?: string;
+    description?: string;
 }
 
 const createWorkSpace = asyncHandler(async (req: Request<{},{},workspaceBody>, res: Response) => {
@@ -63,15 +69,6 @@ const getUserWorkspace = asyncHandler(async(req:Request,res:Response) => {
     const userId = req.user?.id;
     if(!userId) throw new ApiError(401,"Not Authorized");
 
-    const hasAccess = await prisma.workspaceMembers.findFirst({
-        where:{
-            userId,
-        }
-    });
-
-    if((!hasAccess)) throw new ApiError(403,"You don't have access to this workspace");
-
-
     const workspaces = await prisma.workSpace.findMany({
         where: {
            OR: [
@@ -113,15 +110,6 @@ const getWorkspaceById = asyncHandler(async(req:Request, res:Response) => {
 
     if(!userId) throw new ApiError(401,"Not Authorized");
     if(!workspaceId) throw new ApiError(400,"WorkspaceId is required");
-
-    const hasAccess = await prisma.workspaceMembers.findFirst({
-        where:{
-            userId,
-            workspaceId
-        }
-    });
-
-    if((!hasAccess)) throw new ApiError(403,"You don't have access to this workspace");
 
     const workspace = await prisma.workSpace.findFirst({
         where:{
@@ -165,17 +153,6 @@ const getWorkspaceMembers = asyncHandler(async(req:Request,res:Response) => {
 
     if (!userId) throw new ApiError(401, "Not Authorized");
     if (!workspaceId) throw new ApiError(400, "workspaceId is required");
-
-    const hasAccess = await prisma.workspaceMembers.findFirst({
-        where:{
-            userId,
-            workspaceId,
-        }
-    });
-
-    if(!hasAccess){
-        throw new ApiError(403,"You don't have access to this workspace");
-    }
 
     const members = await prisma.workspaceMembers.findMany({
         where:{workspaceId},
@@ -383,10 +360,92 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
         );
 });
 
+const updateWorkspace = asyncHandler(async (req: Request, res: Response) => {
+    const { name, description }: UpdateWorkspaceBody = req.body;
+    const { workspaceId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!workspaceId) throw new ApiError(400, "WorkspaceId is required");
+
+    if (!name && description == undefined) {
+        throw new ApiError(400, "Atleast one field is required");
+    }
+
+    const workspace = await prisma.workSpace.findUnique({
+        where: {
+            id: workspaceId
+        },
+        select: {
+            name: true,
+            description: true,
+        }
+    });
+
+    if (!workspace) throw new ApiError(404, "Workspace not found");;
+
+    const updatedWorkspace = await prisma.workSpace.update({
+        where: { id: workspaceId },
+        data: {
+            ...(name && { name }),
+            ...(description !== undefined && { description: description?.trim() ?? null }),
+        },
+        include: {
+            owner: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            }
+        },
+    });
+
+    if (!updatedWorkspace) throw new ApiError(500, "Failed to update workspace");
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedWorkspace, "Workspace updated successfully")
+    )
+});
+
+
+const deleteWorkspace = asyncHandler(async (req: Request, res: Response) => {
+    const { workspaceId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!workspaceId) throw new ApiError(400, "WorkspaceId is required");
+
+    const workspace = await prisma.workSpace.findUnique({
+        where: {
+            id: workspaceId
+        },
+        select: {
+            id: true,
+            name: true
+        }
+    });
+
+    if (!workspace) throw new ApiError(404, "Workspace not found");
+
+    const deleteWorkspace = await prisma.workSpace.delete({
+        where: {
+            id: workspaceId
+        }
+    });
+
+    if (!deleteWorkspace) throw new ApiError(500, "Failed to delete workspace");
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Workspace deleted successfully")
+    )
+});
+
 export {
     createWorkSpace,
     getUserWorkspace,
     getWorkspaceById,
     getWorkspaceMembers,
-    getWorkspaceOverview
+    getWorkspaceOverview,
+    updateWorkspace,
+    deleteWorkspace
 }

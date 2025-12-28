@@ -18,6 +18,7 @@ export default function ProjectDashboardPage() {
   const params = useParams();
   const dispatch = useAppDispatch();
   const projectId = params.projectId as string;
+  const workspaceId = params.workspaceId as string;
 
   const {
     overview,
@@ -82,6 +83,8 @@ export default function ProjectDashboardPage() {
                   timestamp: a.createdAt,
                 }))}
               loading={recentActivitiesLoading}
+              projectId={projectId}
+              workspaceId={workspaceId}
             />
           </div>
 

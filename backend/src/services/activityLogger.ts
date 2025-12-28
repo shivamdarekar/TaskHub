@@ -26,7 +26,8 @@ interface LogActivityParams{
     type: ActivityType;
     description: string;
     userId: string;
-    projectId: string
+    projectId: string;
+    taskId?: string | null;
 }
 
 export const logActivity = async({
@@ -34,6 +35,7 @@ export const logActivity = async({
     description,
     userId,
     projectId,
+    taskId,
 }: LogActivityParams) => {
     try{
         await prisma.activity.create({
@@ -42,6 +44,7 @@ export const logActivity = async({
                 description,
                 userId,
                 projectId,
+                ...(taskId !== undefined && { taskId })
             },
         });
     } catch (error) {

@@ -41,3 +41,41 @@ export const getTaskDocumentation = asyncHandler(async (req: Request, res: Respo
 
     return res.status(200).json(new ApiResponse(200, { documentation: task.documentation }, "Documentation fetched successfully"));
 });
+
+// Save or update documentation for a project
+export const saveProjectDocumentation = asyncHandler(async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const { content } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!projectId) throw new ApiError(400, "ProjectId is required");
+    if (typeof content !== "string") throw new ApiError(400, "Content is required");
+
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) throw new ApiError(404, "Project not found");
+
+    const documentation = await prisma.documentation.upsert({
+        where: { projectId },
+        update: { content, updatedBy: userId },
+        create: { projectId, content, updatedBy: userId },
+    });
+
+    return res.status(200).json(new ApiResponse(200, { content: documentation.content }, "Project documentation saved successfully"));
+});
+
+// Get documentation for a project
+export const getProjectDocumentation = asyncHandler(async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!projectId) throw new ApiError(400, "ProjectId is required");
+
+    const documentation = await prisma.documentation.findUnique({
+        where: { projectId },
+        select: { content: true },
+    });
+
+    return res.status(200).json(new ApiResponse(200, { content: documentation?.content || "" }, "Project documentation fetched successfully"));
+});

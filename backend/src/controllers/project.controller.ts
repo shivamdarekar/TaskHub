@@ -304,7 +304,8 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
             id: projectId
         },
         select: {
-            name: true
+            name: true,
+            description: true,
         },
     });
 
@@ -331,7 +332,9 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
     //log activity (async, doesn't block response if it fails)
     const changes: string[] = [];
     if (name && name !== currentProject?.name) changes.push(`name to "${name}"`);
-    if (description !== undefined) changes.push("description");
+    if (description !== undefined && description?.trim() !== currentProject?.description) {
+        changes.push(description);
+    }
 
     if (changes.length > 0) {
         logActivity({

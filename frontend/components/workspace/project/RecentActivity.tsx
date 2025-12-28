@@ -14,9 +14,11 @@ interface Activity {
 interface RecentActivityProps {
   activities?: Activity[];
   loading?: boolean;
+  projectId: string;
+  workspaceId: string;
 }
 
-export default function RecentActivity({ activities, loading }: RecentActivityProps) {
+export default function RecentActivity({ activities, loading, projectId, workspaceId }: RecentActivityProps) {
   const router = useRouter();
   
   const formatTimestamp = (timestamp: string) => {
@@ -117,7 +119,7 @@ export default function RecentActivity({ activities, loading }: RecentActivityPr
           <div className="mt-4 pt-3 border-t border-gray-100">
             <button 
               className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer"
-              onClick={() => router.push('./activity')}
+              onClick={() => router.push(`/workspace/${workspaceId}/projects/${projectId}/activity`)}
             >
               View all activity
             </button>

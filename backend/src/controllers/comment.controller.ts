@@ -50,7 +50,8 @@ export const addComment = asyncHandler(async (req: Request, res: Response) => {
         type: ActivityType.COMMENT_ADDED,
         description: `Added a comment`,
         userId,
-        projectId: task.projectId
+        projectId: task.projectId,
+        taskId: taskId
     });
 
     return res.status(200).json(
@@ -185,7 +186,7 @@ export const getTaskComments = asyncHandler(async (req: Request, res: Response) 
 
 export const updateComment = asyncHandler(async (req: Request, res: Response) => {
     const { commentId } = req.params;
-    const { content } = req.body;
+    const { content }: UpdateCommentBody = req.body;
     const userId = req.user?.id;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
@@ -195,7 +196,7 @@ export const updateComment = asyncHandler(async (req: Request, res: Response) =>
     // Check if comment exists and belongs to user
     const existingComment = await prisma.comment.findUnique({
         where: { id: commentId },
-        select: { userId: true, projectId: true },
+        select: { userId: true, projectId: true, taskId: true },
     });
 
     if (!existingComment) throw new ApiError(404, "Comment not found");
@@ -226,6 +227,7 @@ export const updateComment = asyncHandler(async (req: Request, res: Response) =>
         description: `Updated a comment`,
         userId,
         projectId: existingComment.projectId,
+        taskId: existingComment.taskId
     }).catch(console.error);
 
     return res.status(200).json(
@@ -244,7 +246,7 @@ export const deleteComment = asyncHandler(async (req: Request, res: Response) =>
     // Check if comment exists and belongs to user
     const comment = await prisma.comment.findUnique({
         where: { id: commentId },
-        select: { userId: true, projectId: true },
+        select: { userId: true, projectId: true, taskId: true },
     });
 
     if (!comment) throw new ApiError(404, "Comment not found");
@@ -264,6 +266,7 @@ export const deleteComment = asyncHandler(async (req: Request, res: Response) =>
         description: `Deleted a comment`,
         userId,
         projectId: comment.projectId,
+        taskId: comment.taskId
     }).catch(console.error);
 
     return res.status(200).json(

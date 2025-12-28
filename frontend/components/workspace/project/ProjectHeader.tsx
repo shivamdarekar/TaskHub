@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Settings } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Settings, Edit, FileText } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAppDispatch } from "@/redux/hooks";
+import { fetchProjectBasicInfo, fetchRecentProjectActivities } from "@/redux/slices/projectSlice";
 import CreateTaskDialog from "@/components/workspace/task/CreateTaskDialog";
+import EditProjectDialog from "@/components/workspace/project/EditProjectDialog";
 
 interface ProjectHeaderProps {
   project: {
@@ -31,7 +35,9 @@ export default function ProjectHeader({
   activeTab = "dashboard"
 }: ProjectHeaderProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", path: "" },
@@ -44,6 +50,10 @@ export default function ProjectHeader({
   const handleTabClick = (tab: typeof tabs[0]) => {
     const basePath = `/workspace/${workspaceId}/projects/${project.id}`;
     router.push(`${basePath}${tab.path}`);
+  };
+
+  const handleDocumentationClick = () => {
+    router.push(`/workspace/${workspaceId}/projects/${project.id}/documentation`);
   };
 
   const getProjectColor = (name: string) => {
@@ -101,10 +111,28 @@ export default function ProjectHeader({
             <Plus className="h-4 w-4 mr-2" />
             New Task
           </Button>
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <div className="px-2 py-1.5 text-sm font-medium text-gray-900">
+                Actions
+              </div>
+              <DropdownMenuItem onClick={() => setEditProjectOpen(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDocumentationClick}>
+                <FileText className="h-4 w-4 mr-2" />
+                Documentation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -129,6 +157,17 @@ export default function ProjectHeader({
         open={createTaskOpen}
         onOpenChange={setCreateTaskOpen}
         projectId={project.id}
+      />
+      
+      <EditProjectDialog
+        project={project}
+        workspaceId={workspaceId}
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        onProjectUpdated={() => {
+          dispatch(fetchProjectBasicInfo(project.id));
+          dispatch(fetchRecentProjectActivities({ projectId: project.id }));
+        }}
       />
     </div>
   );

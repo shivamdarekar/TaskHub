@@ -105,7 +105,8 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
         type: ActivityType.TASK_CREATED,
         description: `Created Task "${title}"`,
         userId,
-        projectId
+        projectId,
+        taskId: task.id
     }).catch(console.error);
 
     return res.status(201).json(
@@ -308,6 +309,7 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
             description: `Changed task "${task.title}" status from ${existingTask.status} to ${updates.status}`,
             userId,
             projectId: existingTask.projectId,
+            taskId: task.id
         }).catch(console.error);
     }
 
@@ -316,7 +318,8 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
             type: ActivityType.TASK_PRIORITY_CHANGED,
             description: `Changed task "${task.title}" priority from ${existingTask.priority} to ${updates.priority}`,
             userId,
-            projectId: existingTask.projectId
+            projectId: existingTask.projectId,
+            taskId: task.id
         }).catch(console.error);
     }
 
@@ -327,7 +330,8 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
                 ? `Assigned task "${task.title}" to ${task.assignedTo?.name}`
                 : `Unassigned task "${task.title}"`,
             userId,
-            projectId: existingTask.projectId
+            projectId: existingTask.projectId,
+            taskId: task.id
         }).catch(console.error);
     }
 
@@ -359,7 +363,8 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
         type: ActivityType.TASK_DELETED,
         description: `Deleted Task "${task.title}"`,
         userId,
-        projectId: task.projectId
+        projectId: task.projectId,
+        taskId: taskId
     }).catch(console.error);
 
     return res.status(200).json(
@@ -477,7 +482,8 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
             type: ActivityType.TASK_STATUS_CHANGED,
             description: `Moved task "${truncateTitle(task.title)}" from ${formatStatusForDisplay(oldStatus)} to ${formatStatusForDisplay(toStatus)}`,
             userId,
-            projectId: task.projectId
+            projectId: task.projectId,
+            taskId: task.id
         }).catch(console.error);
     }
     
