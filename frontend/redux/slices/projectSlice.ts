@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
 import { handleAxiosError } from "../api/axiosError";
+import { resetAppState } from "../actions/appActions";
 
 interface Project{
     id: string;
@@ -424,7 +425,10 @@ const projectSlice = createSlice({
             .addCase(deleteProject.rejected, (state, action) => {
                 state.projectsLoading = false;
                 state.error = action.payload as string;
-            });
+            })
+            
+            // Reset all project data on logout
+            .addCase(resetAppState, () => initialState);
     }
 });
 

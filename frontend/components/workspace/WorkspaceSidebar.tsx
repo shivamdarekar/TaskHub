@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 
 import {
@@ -33,6 +33,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { clearUser, logoutUser } from "@/redux/slices/authSlice";
+import { resetAppState } from "@/redux/actions/appActions";
+import { persistor } from "@/redux/store";
 import CreateProjectDialog from "./CreateProjectDialog";
 
 interface SidebarProps {
@@ -42,6 +44,7 @@ interface SidebarProps {
 export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -61,10 +64,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
       label: "Home",
       icon: Home,
       href: `/workspace/${workspaceId}`,
-      active:
-        params.workspaceId === workspaceId &&
-        !params.projectId &&
-        (params.section === undefined || params.section === null),
+      active: pathname === `/workspace/${workspaceId}`,
     },
     {
       label: "My Tasks",
@@ -82,7 +82,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
       label: "Settings",
       icon: Settings,
       href: `/workspace/${workspaceId}/settings`,
-      active: params.section === "settings",
+      active: pathname === `/workspace/${workspaceId}/settings`,
     },
   ];
 
@@ -95,11 +95,15 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
   try {
     await dispatch(logoutUser()).unwrap();
     dispatch(clearUser());
+    dispatch(resetAppState());
+    persistor.purge(); // Clear persisted data
     router.push("/"); 
   } catch (error) {
     console.error("Logout failed:", error);
     // Even if API fails, clear local state and redirect
     dispatch(clearUser());
+    dispatch(resetAppState());
+    persistor.purge(); // clear persisted data
     router.push("/login");
   }
 };

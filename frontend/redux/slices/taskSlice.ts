@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
 import { handleAxiosError } from "../api/axiosError";
+import { resetAppState } from "../actions/appActions";
 
 export enum TaskStatus {
     TODO = "TODO",
@@ -465,7 +466,10 @@ const taskSlice = createSlice({
             .addCase(getTimelineTasks.rejected, (state, action) => {
                 state.timelineLoading = false;
                 state.error = action.payload as string;
-            });
+            })
+            
+            // Reset all task data on logout
+            .addCase(resetAppState, () => initialState);
     },
 });
 

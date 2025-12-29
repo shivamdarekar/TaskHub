@@ -37,13 +37,16 @@ export default function Home() {
     }
   },[isAuthenticated, dispatch, workspaces.length]);
 
-  const handleGoToWorkspace = () =>{
-    if(workspaces.length > 0){
+  const handleGoToWorkspace = () => {
+    if (loading) return; // Prevent action while loading
+    
+    if (workspaces.length > 0) {
       router.push(`/workspace/${workspaces[0].id}`);
-    }else{
+    } else {
+      // If no workspaces after loading, go to create
       router.push('/workspace/create');
     }
-  }
+  };
 
   if (authLoading) {
   return (

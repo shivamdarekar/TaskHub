@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
 import { handleAxiosError } from "../api/axiosError";
+import { resetAppState } from "../actions/appActions";
 
 interface User {
     id: string;
@@ -295,7 +296,10 @@ const commentSlice = createSlice({
             })
             .addCase(deleteComment.rejected, (state, action) => {
                 state.error = action.payload as string;
-            });
+            })
+            
+            // Reset all comment data on logout
+            .addCase(resetAppState, () => initialState);
     },
 });
 

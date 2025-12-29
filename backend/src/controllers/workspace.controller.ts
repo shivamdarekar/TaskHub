@@ -360,6 +360,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
         );
 });
 
+
 const updateWorkspace = asyncHandler(async (req: Request, res: Response) => {
     const { name, description }: UpdateWorkspaceBody = req.body;
     const { workspaceId } = req.params;

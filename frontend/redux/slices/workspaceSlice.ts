@@ -1,6 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction, isRejectedWithValue } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
 import { handleAxiosError } from "../api/axiosError";
+import { resetAppState } from "../actions/appActions";
 
 interface Workspace {
     id: string;
@@ -12,23 +13,24 @@ interface Workspace {
     updatedAt: string;
 }
 
-interface WorkspaceState{
+interface WorkspaceState {
     workspaces: Workspace[];
     loading: boolean;
     error: string | null;
     overview: WorkspaceOverview | null;
     overviewLoading: boolean;
     currentWorkspace: WorkspaceDetail | null;
+    currentWorkspaceLoading: boolean;
     members: Member[];
     membersLoading: boolean;
 }
 
-interface WorkspaceData{
+interface WorkspaceData {
     name: string;
     description?: string;
 }
 
-interface WorkspaceOverviewStats{
+interface WorkspaceOverviewStats {
     totalProjects: number;
     totalTasks: number;
     myTasks: number;
@@ -44,21 +46,21 @@ interface WorkspaceOverviewStats{
     }[];
 }
 
-interface WorkspaceOverviewMember{
+interface WorkspaceOverviewMember {
     id: string;
     name: string;
     email: string;
     joinedAt: string;
 }
 
-interface WorkspaceOverviewProjects{
+interface WorkspaceOverviewProjects {
     id: string;
     name: string;
     createdAt: string;
     taskCount: number;
 }
 
-interface WorkspaceOverview{
+interface WorkspaceOverview {
     workspace: {
         id: string;
         name: string;
@@ -106,6 +108,11 @@ interface Member {
     createdAt: string;
 }
 
+interface UpdateWorkspaceData {
+    name?: string;
+    description?: string;
+}
+
 const initialState: WorkspaceState = {
     workspaces: [],
     loading: false,
@@ -113,47 +120,48 @@ const initialState: WorkspaceState = {
     overview: null,
     overviewLoading: false,
     currentWorkspace: null,
+    currentWorkspaceLoading: false,
     members: [],
     membersLoading: false,
 };
 
 export const createWorkspace = createAsyncThunk(
     "workspace/create",
-    async (data:WorkspaceData, {rejectWithValue}) => {
+    async (data: WorkspaceData, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.post("/api/v1/workspace/create", data);
 
             return response.data.data.workspace
         }
-        catch (error:unknown) {
-            return rejectWithValue(handleAxiosError(error,"Failed to create workspace"))
+        catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to create workspace"))
         }
     }
 );
 
 export const fetchUserWorkspaces = createAsyncThunk(
     "workspace/get",
-    async(_ ,{rejectWithValue}) => {
-        try{
+    async (_, { rejectWithValue }) => {
+        try {
             const response = await axiosInstance.get("/api/v1/workspace/get");
 
             return response.data.data.workspaces;
         }
-        catch (error: unknown){
-            return rejectWithValue(handleAxiosError(error,"Failed to fetch workspaces"))
+        catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to fetch workspaces"))
         }
     }
 );
 
 export const fetchWorkspaceById = createAsyncThunk(
     "workspace/fetchById",
-    async(workspaceId:string,{rejectWithValue}) => {
-        try{
+    async (workspaceId: string, { rejectWithValue }) => {
+        try {
             const response = await axiosInstance.get(`/api/v1/workspace/${workspaceId}`);
 
             return response.data.data.workspace;
         }
-        catch (error:unknown){
+        catch (error: unknown) {
             return rejectWithValue(handleAxiosError(error, "Failed to fetch Workspace"));
         }
     }
@@ -187,21 +195,52 @@ export const fetchWorkspaceOverview = createAsyncThunk(
     }
 );
 
+export const updateWorkspace = createAsyncThunk(
+    "workspace/update",
+    async ({ workspaceId, data }: { workspaceId: string, data: UpdateWorkspaceData }, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.patch(`/api/v1/workspace/${workspaceId}/update`,
+                data
+            );
+            return response.data.data;
+        } catch (error: unknown) {
+            return rejectWithValue(
+                handleAxiosError(error, "Failed to update workspace")
+            );
+        }
+    }
+);
+
+export const deleteWorkspace = createAsyncThunk(
+    "workspace/delete",
+    async (workspaceId: string, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.delete(`/api/v1/workspace/${workspaceId}/delete`);
+            return workspaceId;
+        } catch (error: unknown) {
+            return rejectWithValue(
+                handleAxiosError(error, "Failed to delete workspace")
+            );
+        }
+    }
+);
+
 const workspaceSlice = createSlice({
-    name:"workspace",
+    name: "workspace",
     initialState,
-    reducers:{
+    reducers: {
         clearError: (state) => {
             state.error = null;
         },
-    clearWorkspaceData: (state) => {
-      state.currentWorkspace = null;
-      state.members = [];
-      state.overview = null;
-      state.membersLoading = false;
-      state.overviewLoading = false;
-      state.error = null;
-    },
+        clearWorkspaceData: (state) => {
+            state.currentWorkspace = null;
+            state.members = [];
+            state.overview = null;
+            state.currentWorkspaceLoading = false;
+            state.membersLoading = false;
+            state.overviewLoading = false;
+            state.error = null;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -209,42 +248,42 @@ const workspaceSlice = createSlice({
                 state.loading = true;
                 state.error = null
             })
-            .addCase(createWorkspace.fulfilled, (state,action) => {
+            .addCase(createWorkspace.fulfilled, (state, action) => {
                 state.loading = false;
                 state.workspaces.push(action.payload);
                 state.error = null;
             })
-            .addCase(createWorkspace.rejected,(state,action) => {
+            .addCase(createWorkspace.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string
             })
 
-            .addCase(fetchUserWorkspaces.pending,(state) => {
+            .addCase(fetchUserWorkspaces.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchUserWorkspaces.fulfilled, (state,action) => {
+            .addCase(fetchUserWorkspaces.fulfilled, (state, action) => {
                 state.loading = false;
                 state.workspaces = action.payload;
                 state.error = null;
             })
-            .addCase(fetchUserWorkspaces.rejected, (state,action) => {
+            .addCase(fetchUserWorkspaces.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string
             })
 
             // Fetch Workspace By ID
             .addCase(fetchWorkspaceById.pending, (state) => {
-                state.loading = true;
+                state.currentWorkspaceLoading = true;
                 state.error = null;
             })
             .addCase(fetchWorkspaceById.fulfilled, (state, action: PayloadAction<WorkspaceDetail>) => {
-                state.loading = false;
+                state.currentWorkspaceLoading = false;
                 state.currentWorkspace = action.payload;
                 state.error = null;
             })
             .addCase(fetchWorkspaceById.rejected, (state, action) => {
-                state.loading = false;
+                state.currentWorkspaceLoading = false;
                 state.error = action.payload as string;
             })
 
@@ -263,7 +302,7 @@ const workspaceSlice = createSlice({
                 state.error = action.payload as string;
             })
 
-        //workspace Overview
+            //workspace Overview
             .addCase(fetchWorkspaceOverview.pending, (state) => {
                 state.overviewLoading = true;
                 state.error = null;
@@ -280,8 +319,63 @@ const workspaceSlice = createSlice({
                 state.overview = null;
                 state.error = action.payload as string;
             })
+
+            .addCase(updateWorkspace.pending, (state) => {
+                state.currentWorkspaceLoading = true;
+                state.error = null;
+            })
+            .addCase(updateWorkspace.fulfilled, (state, action: PayloadAction<Workspace>) => {
+                state.currentWorkspaceLoading = false;
+
+                if (state.currentWorkspace && state.currentWorkspace.id === action.payload.id) {
+                    state.currentWorkspace = {
+                        ...state.currentWorkspace,
+                        name: action.payload.name,
+                        description: action.payload.description,
+                        updatedAt: action.payload.updatedAt,
+                    };
+                }
+
+                const idx = state.workspaces.findIndex((p) => p.id === action.payload.id);
+                if (idx != -1) {
+                    state.workspaces[idx] = {
+                        ...state.workspaces[idx],
+                        name: action.payload.name,
+                        description: action.payload.description,
+                        updatedAt: action.payload.updatedAt,
+                    }
+                };
+                state.error = null;
+            })
+            .addCase(updateWorkspace.rejected, (state, action) => {
+                state.currentWorkspaceLoading = false;
+                state.error = action.payload as string;
+            })
+
+            .addCase(deleteWorkspace.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteWorkspace.fulfilled, (state, action) => {
+                state.loading = false;
+
+                state.workspaces = state.workspaces.filter((p) => p.id !== action.payload);
+                if (state.currentWorkspace?.id === action.payload) {
+                    state.currentWorkspace = null;
+                    state.overview = null;
+                    state.members = [];
+                }
+                state.error = null;
+            })
+            .addCase(deleteWorkspace.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            
+            // Reset all workspace data on logout
+            .addCase(resetAppState, () => initialState);
     },
 });
 
-export const {clearError, clearWorkspaceData} = workspaceSlice.actions;
+export const { clearError, clearWorkspaceData } = workspaceSlice.actions;
 export default workspaceSlice.reducer;

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
 import { handleAxiosError } from "../api/axiosError";
+import { resetAppState } from "../actions/appActions";
 
 interface DocumentationState {
   documentation: string;
@@ -155,7 +156,10 @@ const documentationSlice = createSlice({
       .addCase(saveProjectDocumentation.rejected, (state, action) => {
         state.saving = false;
         state.error = action.payload as string;
-      });
+      })
+      
+      // Reset all documentation data on logout
+      .addCase(resetAppState, () => initialState);
   },
 });
 
