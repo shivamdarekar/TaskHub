@@ -2,32 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchRecentProjectActivities } from "@/redux/slices/projectSlice";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Activity, Search, Filter, Calendar } from "lucide-react";
+import { Activity, Search, Filter, Calendar, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { fetchProjectActivities } from "@/redux/slices/projectSlice";
 
 export default function ActivityPage() {
   const params = useParams();
-  const dispatch = useAppDispatch();
   const projectId = params.projectId as string;
-
-  const { recentActivities, recentActivitiesLoading } = useAppSelector((state) => state.project);
+  const dispatch = useAppDispatch();
   
+  const { activities, activitiesLoading, activitiesPagination, error } = useAppSelector(
+    (state) => state.project
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isPageChanging, setIsPageChanging] = useState(false);
 
   useEffect(() => {
     if (projectId) {
-      dispatch(fetchRecentProjectActivities({ projectId, limit: 50 }));
+      dispatch(fetchProjectActivities({ projectId, page: currentPage, limit: 20 }));
     }
-  }, [dispatch, projectId]);
+  }, [dispatch, projectId, currentPage]);
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -75,9 +79,9 @@ export default function ActivityPage() {
   };
 
   // Get unique activity types from the data
-  const availableTypes = [...new Set(recentActivities.map(a => a.type))];
+  const availableTypes = [...new Set(activities.map(a => a.type))];
 
-  const filteredActivities = recentActivities
+  const filteredActivities = activities
     .filter(activity => {
       if (filterType !== "all" && activity.type !== filterType) return false;
       if (searchTerm && !activity.description?.toLowerCase().includes(searchTerm.toLowerCase()) && 
@@ -85,7 +89,40 @@ export default function ActivityPage() {
       return true;
     });
 
-  if (recentActivitiesLoading) {
+  const handlePageChange = (page: number) => {
+    if (page === currentPage) return;
+    setIsPageChanging(true);
+    setCurrentPage(page);
+  };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (!activitiesLoading) {
+      setIsPageChanging(false);
+    }
+  }, [activitiesLoading]);
+
+  const isInitialLoad = activitiesLoading && activities.length === 0;
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card className="p-12 text-center">
+          <h3 className="text-lg font-medium text-red-600 mb-2">Error loading activities</h3>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <Button onClick={() => dispatch(fetchProjectActivities({ projectId, page: currentPage, limit: 20 }))}>
+            Try Again
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+
+  if (isInitialLoad) {
     return (
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -118,7 +155,7 @@ export default function ActivityPage() {
             <Activity className="h-5 w-5 text-blue-600" />
             <h1 className="text-xl font-semibold text-gray-900">Project Activity</h1>
             <Badge variant="secondary" className="ml-2">
-              {filteredActivities.length} activities
+              {activitiesPagination?.total || 0} activities
             </Badge>
           </div>
           
@@ -155,6 +192,15 @@ export default function ActivityPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6">
+        <div className="relative">
+          {isPageChanging && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="text-sm text-gray-600">Loading...</span>
+              </div>
+            </div>
+          )}
         {filteredActivities.length === 0 ? (
           <Card className="p-12 text-center">
             <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -206,7 +252,60 @@ export default function ActivityPage() {
             })}
           </div>
         )}
+        </div>
       </div>
+
+      {activitiesPagination && activitiesPagination.totalPages > 1 && (
+        <div className="bg-white border-t px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Showing {((activitiesPagination.page - 1) * activitiesPagination.limit) + 1} to{' '}
+              {Math.min(activitiesPagination.page * activitiesPagination.limit, activitiesPagination.total)} of{' '}
+              {activitiesPagination.total} activities
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={isPageChanging || !activitiesPagination.hasPrev}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, activitiesPagination.totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={pageNum === activitiesPagination.page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={isPageChanging}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={isPageChanging || !activitiesPagination.hasNext}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

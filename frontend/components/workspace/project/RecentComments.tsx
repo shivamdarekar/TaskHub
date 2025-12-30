@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
 
 interface Comment {
   id: string;
@@ -17,6 +18,14 @@ interface RecentCommentsProps {
 }
 
 export default function RecentComments({ comments, loading }: RecentCommentsProps) {
+  const router = useRouter();
+  const params = useParams();
+  const workspaceId = params.workspaceId as string;
+  const projectId = params.projectId as string;
+
+  const handleViewAllComments = () => {
+    router.push(`/workspace/${workspaceId}/projects/${projectId}/comments`);
+  };
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -133,7 +142,10 @@ export default function RecentComments({ comments, loading }: RecentCommentsProp
         
         {displayComments.length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <button className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer">
+            <button 
+              onClick={handleViewAllComments}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer"
+            >
               View all comments
             </button>
           </div>

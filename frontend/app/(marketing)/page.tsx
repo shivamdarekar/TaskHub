@@ -60,8 +60,18 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="py-20 sm:py-28 text-center bg-gradient-to-b from-white via-blue-50/30 to-white relative overflow-hidden">
+      <section className="py-20 sm:py-28 text-center bg-gradient-to-b from-white via-blue-50/30 to-white relative overflow-hidden kanban-animation">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        
+        {/* Kanban Animation */}
+        <div className="kanban-columns">
+          <div className="kanban-column"></div>
+          <div className="kanban-column"></div>
+          <div className="kanban-column"></div>
+          <div className="kanban-column"></div>
+          <div className="kanban-sweep"></div>
+        </div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="animate-fade-in-up">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900">

@@ -77,6 +77,14 @@ interface ProjectState {
     overviewLoading: boolean;
     activities: Activity[];
     activitiesLoading: boolean;
+    activitiesPagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    } | null;
     recentActivities: Activity[];           
     recentActivitiesLoading: boolean;
     members: ProjectMemberDetails[];
@@ -127,6 +135,7 @@ const initialState: ProjectState = {
     overviewLoading: false,
     activities: [],
     activitiesLoading: false,
+    activitiesPagination: null,
     recentActivities: [],
     recentActivitiesLoading: false,
     members: [],
@@ -189,6 +198,20 @@ export const fetchProjectMembers = createAsyncThunk(
             return response.data.data.members;
         } catch (error: unknown) {
             return rejectWithValue(handleAxiosError(error, "Failed to fetch project members"));
+        }
+    }
+);
+
+export const fetchProjectActivities = createAsyncThunk(
+    "project/fetchActivities",
+    async({projectId, page = 1, limit = 20}: {projectId: string, page?: number, limit?: number}, {rejectWithValue}) => {
+       try {
+            const response = await axiosInstance.get(
+                `/api/v1/project/${projectId}/activities?page=${page}&limit=${limit}`
+            );
+            return response.data.data;
+        } catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to fetch project activities"));
         }
     }
 );
@@ -262,6 +285,7 @@ const projectSlice = createSlice({
             state.currentProject = null;
             state.overview = null;
             state.activities = [];
+            state.activitiesPagination = null;
             state.recentActivities = [];
             state.members = [];
             state.error = null
@@ -332,6 +356,22 @@ const projectSlice = createSlice({
             .addCase(fetchProjectMembers.rejected, (state, action) => {
                 state.membersLoading = false;
                 state.error = action.payload as string
+            })
+
+            //fetch project activities
+            .addCase(fetchProjectActivities.pending, (state) => {
+                state.activitiesLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchProjectActivities.fulfilled, (state, action) => {
+                state.activitiesLoading = false;
+                state.activities = action.payload.activities;
+                state.activitiesPagination = action.payload.pagination;
+                state.error = null;
+            })
+            .addCase(fetchProjectActivities.rejected, (state, action) => {
+                state.activitiesLoading = false;
+                state.error = action.payload as string;
             })
 
             //fetch project recent activities
@@ -417,6 +457,7 @@ const projectSlice = createSlice({
                     state.currentProject = null;
                     state.overview = null;
                     state.activities = [];
+                    state.activitiesPagination = null;
                     state.members = [];
                 }
 

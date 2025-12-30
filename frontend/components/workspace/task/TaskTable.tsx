@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, Paperclip, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Paperclip, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Task, TaskStatus, TaskPriority } from "@/redux/slices/taskSlice";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -70,6 +71,19 @@ export default function TaskTable({
   const params = useParams();
   const workspaceId = params.workspaceId as string;
   const projectId = params.projectId as string;
+  const [isPageChanging, setIsPageChanging] = useState(false);
+  
+  useEffect(() => {
+    if (!loading) {
+      setIsPageChanging(false);
+    }
+  }, [loading]);
+  
+  const handlePageChange = (page: number) => {
+    if (page === pagination?.page) return;
+    setIsPageChanging(true);
+    onPageChange(page);
+  };
   
   const isColumnVisible = (columnId: string) => visibleColumns.includes(columnId);
   
@@ -100,6 +114,15 @@ export default function TaskTable({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="relative">
+        {isPageChanging && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              <span className="text-sm text-gray-600">Loading...</span>
+            </div>
+          </div>
+        )}
       <div className="overflow-x-auto min-w-0">
         <Table>
           <TableHeader>
@@ -222,6 +245,7 @@ export default function TaskTable({
           </TableBody>
         </Table>
       </div>
+      </div>
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
@@ -233,8 +257,8 @@ export default function TaskTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onPageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={isPageChanging || pagination.page <= 1}
               className="text-xs md:text-sm"
             >
               <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
@@ -247,8 +271,8 @@ export default function TaskTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onPageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={isPageChanging || pagination.page >= pagination.totalPages}
               className="text-xs md:text-sm"
             >
               <span className="hidden sm:inline">Next</span>

@@ -181,6 +181,57 @@
     animation-delay: 4s;
   }
 
+  @keyframes kanban-sweep {
+    0% {
+      transform: translateX(-100%);
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateX(400%);
+      opacity: 0.3;
+    }
+  }
+
+  .kanban-animation {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kanban-columns {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .kanban-column {
+    flex: 1;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+    border-right: 1px solid rgba(59, 130, 246, 0.2);
+    position: relative;
+  }
+
+  .kanban-column:last-child {
+    border-right: none;
+  }
+
+  .kanban-sweep {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 25%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+    animation: kanban-sweep 4s ease-in-out infinite;
+  }
+
   /* Custom scrollbar styles */
   .scrollbar-thin {
     scrollbar-width: thin;
