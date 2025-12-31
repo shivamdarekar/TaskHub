@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware";
-import { hasProjectAccess, verifyTaskExists, canModifyTask } from "../middleware/roleCheck.middleware";
+import { hasProjectAccess, verifyTaskExists, canModifyTask, hasWorkspaceAccess } from "../middleware/roleCheck.middleware";
 import { validate } from "../config/validate";
 import { createTaskSchema, updateTaskSchema } from "../config/schema";
 import {
@@ -12,12 +12,16 @@ import {
     deleteTask,
     moveTaskKanban,
     getCalendarTasks,
-    getTimelineTasks
+    getTimelineTasks,
+    getUserTasks
 } from "../controllers/task.controller";
 
 
 const router = Router();
 router.use(verifyJWT);
+
+//workspace level tasks
+router.get("/workspace/:workspaceId/my-tasks", hasWorkspaceAccess, getUserTasks);
 
 //project level tasks
 router.post("/project/:projectId/create", hasProjectAccess, validate(createTaskSchema), createTask);

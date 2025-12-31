@@ -7,6 +7,7 @@ import { getTaskById, TaskStatus, TaskPriority } from "@/redux/slices/taskSlice"
 import TaskDocumentation from "@/components/workspace/task/TaskDocumentation";
 import TaskComments from "@/components/workspace/task/TaskComments";
 import EditTaskDialog from "@/components/workspace/task/EditTaskDialog";
+import DeleteTaskDialog from "@/components/workspace/task/DeleteTaskDialog";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,8 @@ import {
   Calendar, 
   Flag, 
   Paperclip,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -33,6 +35,7 @@ export default function TaskDetailPage() {
 
   const { currentTask, currentTaskLoading } = useAppSelector((state) => state.task);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (projectId && taskId) {
@@ -131,15 +134,26 @@ export default function TaskDetailPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2"
-              >
-                <Edit className="h-4 w-4" />
-                Edit Task
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Task
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsDeleting(true)}
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center gap-4 mb-6">
@@ -244,6 +258,14 @@ export default function TaskDetailPage() {
           onOpenChange={setIsEditing}
         />
       )}
+      
+      {/* Delete Task Dialog */}
+      <DeleteTaskDialog
+        task={currentTask ? { id: currentTask.id, title: currentTask.title, projectId: currentTask.projectId } : null}
+        open={isDeleting}
+        onOpenChange={setIsDeleting}
+        onTaskDeleted={() => router.push(`/workspace/${workspaceId}/projects/${projectId}/table`)}
+      />
     </div>
   );
 }

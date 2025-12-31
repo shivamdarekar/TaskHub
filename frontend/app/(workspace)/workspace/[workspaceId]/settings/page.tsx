@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { updateWorkspace, deleteWorkspace } from "@/redux/slices/workspaceSlice";
+import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,15 +113,11 @@ export default function WorkspaceSettingsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage your workspace settings and preferences</p>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
+      <WorkspaceNavbar 
+        title="Settings" 
+        subtitle="Manage your workspace settings and preferences"
+      />
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         {/* Workspace Settings */}
         <Card>

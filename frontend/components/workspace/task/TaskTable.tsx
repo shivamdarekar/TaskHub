@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, Paperclip, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Paperclip, ChevronLeft, ChevronRight, Loader2, Edit, Copy, Trash2 } from "lucide-react";
 import { Task, TaskStatus, TaskPriority } from "@/redux/slices/taskSlice";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import EditTaskDialog from "./EditTaskDialog";
+import DeleteTaskDialog from "./DeleteTaskDialog";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -21,6 +23,7 @@ interface TaskTableProps {
   } | null;
   onPageChange: (page: number) => void;
   onSort: (sortBy: string, sortOrder: "asc" | "desc") => void;
+  onTaskUpdated?: () => void;
   visibleColumns?: string[];
 }
 
@@ -65,6 +68,7 @@ export default function TaskTable({
   pagination, 
   onPageChange, 
   onSort,
+  onTaskUpdated,
   visibleColumns = ["title", "status", "priority", "createdAt", "dueDate", "assignedTo", "attachments", "actions"]
 }: TaskTableProps) {
   const router = useRouter();
@@ -72,6 +76,8 @@ export default function TaskTable({
   const workspaceId = params.workspaceId as string;
   const projectId = params.projectId as string;
   const [isPageChanging, setIsPageChanging] = useState(false);
+  const [editTask, setEditTask] = useState<Task | null>(null);
+  const [deleteTask, setDeleteTask] = useState<{ id: string; title: string; projectId: string } | null>(null);
   
   useEffect(() => {
     if (!loading) {
@@ -232,9 +238,21 @@ export default function TaskTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditTask(task)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => console.log('Duplicate task:', task.id)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => setDeleteTask({ id: task.id, title: task.title, projectId: task.projectId })}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -282,6 +300,24 @@ export default function TaskTable({
           </div>
         </div>
       )}
+      
+      {/* Edit Task Dialog */}
+      {editTask && (
+        <EditTaskDialog
+          task={editTask}
+          open={!!editTask}
+          onOpenChange={(open) => !open && setEditTask(null)}
+          onTaskUpdated={onTaskUpdated}
+        />
+      )}
+      
+      {/* Delete Task Dialog */}
+      <DeleteTaskDialog
+        task={deleteTask}
+        open={!!deleteTask}
+        onOpenChange={(open) => !open && setDeleteTask(null)}
+        onTaskDeleted={onTaskUpdated}
+      />
     </div>
   );
 }

@@ -70,7 +70,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
       label: "My Tasks",
       icon: ListChecks,
       href: `/workspace/${workspaceId}/tasks`,
-      active: params.section === "tasks",
+      active: pathname === `/workspace/${workspaceId}/tasks`,
     },
     {
       label: "Members",

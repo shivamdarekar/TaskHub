@@ -166,6 +166,17 @@ interface GetTimelineTasksParams {
     view?: "assigned" | "created" | "all";
 }
 
+interface GetUserTasksParams {
+    workspaceId: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+}
+
 // Create Task
 export const createTask = createAsyncThunk(
     "task/createTask",
@@ -307,6 +318,23 @@ export const getTimelineTasks = createAsyncThunk(
             return response.data.data.tasks;
         } catch (error: unknown) {
             return rejectWithValue(handleAxiosError(error, "Failed to fetch timeline tasks"));
+        }
+    }
+);
+
+// Get User Tasks (across all projects in workspace)
+export const getUserTasks = createAsyncThunk(
+    "task/getUserTasks",
+    async (params: GetUserTasksParams, { rejectWithValue }) => {
+        try {
+            const { workspaceId, ...queryParams } = params;
+            const response = await axiosInstance.get(
+                `/api/v1/tasks/workspace/${workspaceId}/my-tasks`,
+                { params: queryParams }
+            );
+            return response.data.data;
+        } catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to fetch user tasks"));
         }
     }
 );
@@ -465,6 +493,21 @@ const taskSlice = createSlice({
             })
             .addCase(getTimelineTasks.rejected, (state, action) => {
                 state.timelineLoading = false;
+                state.error = action.payload as string;
+            })
+
+            // Get User Tasks
+            .addCase(getUserTasks.pending, (state) => {
+                state.tasksLoading = true;
+                state.error = null;
+            })
+            .addCase(getUserTasks.fulfilled, (state, action) => {
+                state.tasksLoading = false;
+                state.tasks = action.payload.tasks;
+                state.pagination = action.payload.pagination;
+            })
+            .addCase(getUserTasks.rejected, (state, action) => {
+                state.tasksLoading = false;
                 state.error = action.payload as string;
             })
             

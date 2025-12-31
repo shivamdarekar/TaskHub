@@ -599,4 +599,77 @@ export const getTimelineTasks = asyncHandler(async (req, res) => {
 });
 
 
+// Get user's tasks across all projects in a workspace
+export const getUserTasks = asyncHandler(async (req: Request, res: Response) => {
+  const { workspaceId } = req.params;
+  const userId = req.user?.id;
+  const {
+    status, priority,
+    search,
+    page = "1",
+    limit = "20",
+    sortBy = "dueDate",
+    sortOrder = "asc",
+  } = req.query;
+
+  if (!userId) throw new ApiError(401, "Not Authorized");
+  if (!workspaceId) throw new ApiError(400, "Workspace ID is required");
+
+  const filters: any = {
+    assigneeId: userId,
+    project: {
+      workspaceId: workspaceId
+    }
+  };
+
+  if (status) filters.status = status as TaskStatus;
+  if (priority) filters.priority = priority as TaskPriority;
+  if (search && typeof search === 'string' && search.trim()) {
+    filters.OR = [
+      { title: { contains: search.trim(), mode: 'insensitive' } },
+      { description: { contains: search.trim(), mode: 'insensitive' } }
+    ];
+  }
+
+  const pageNumber = Math.max(parseInt(page as string, 10), 1);
+  const pageSize = Math.min(parseInt(limit as string, 10), 100);
+  const skip = (pageNumber - 1) * pageSize;
+
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where: filters,
+      include: {
+        creator: {
+          select: { id: true, name: true, email: true },
+        },
+        project: {
+          select: { id: true, name: true }
+        }
+      },
+      orderBy: {
+        [sortBy as string]: sortOrder === "desc" ? "desc" : "asc",
+      },
+      skip,
+      take: pageSize,
+    }),
+    prisma.task.count({ where: filters }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200,
+      {
+        tasks,
+        pagination: {
+          total,
+          page: pageNumber,
+          limit: pageSize,
+          totalPages: Math.ceil(total / pageSize),
+        }
+      },
+      "User tasks fetched successfully"
+    )
+  );
+});
+
+
 
