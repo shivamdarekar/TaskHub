@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 //configure transporter
-export const createTransporter = () => {
+export const createTransporter = async () => {
     //for production, use actual smtp credentials
     if (process.env.NODE_ENV === 'production') {
         return nodemailer.createTransport({
@@ -16,15 +16,14 @@ export const createTransporter = () => {
     }
 
     //for dev/testing use ethereal
-    return nodemailer.createTestAccount().then(account => {
-        return nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            secure: false,
-            auth: {
-                user: account.user,
-                pass: account.pass,
-            },
-        });
+    const account = await nodemailer.createTestAccount();
+    return nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+            user: account.user,
+            pass: account.pass,
+        },
     });
 };

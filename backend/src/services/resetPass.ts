@@ -183,7 +183,7 @@ export const sendPasswordResetOTP = async(
 
         //log email preview url in development
         if (process.env.NODE_ENV !== 'production' && info.messageId) {
-            console.log('Email privew url:', nodemailer.getTestMessageUrl(info));
+            console.log('Email preview url:', nodemailer.getTestMessageUrl(info));
         }
 
         return info;

@@ -234,7 +234,7 @@ export default function TaskDetailPage() {
           <TaskComments projectId={projectId} taskId={taskId} />
 
           {/* Attachments */}
-          <Card>
+          <Card> 
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Paperclip className="h-5 w-5" />

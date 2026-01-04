@@ -2,13 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "../utils/asynchandler";
 import { ApiError } from "../utils/apiError";
 import prisma from "../config/prisma";
-import { throwDeprecation } from "process";
+
 
 // Check if user is workspace owner
 export const isWorkspaceOwner = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.id;
-    const {workspaceId} = req.params
+    const {workspaceId} = req.params;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
     if (!workspaceId) throw new ApiError(400, "Workspace ID is required");

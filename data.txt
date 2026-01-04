@@ -25,5 +25,7 @@ Keeping schema.prisma inside src/ makes migrations/config messy.
 //add caching in slices 
 
 //invite member is pending
+// onwer invite member, member click request to join
+   owner accept request then member join 
 
 
