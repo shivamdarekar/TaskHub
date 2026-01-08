@@ -75,6 +75,7 @@ interface WorkspaceOverview {
     stats: WorkspaceOverviewStats;
     recentMembers: WorkspaceOverviewMember[];
     recentProjects: WorkspaceOverviewProjects[];
+    isOwner: boolean; // Add this field
 }
 
 interface WorkspaceDetail {
