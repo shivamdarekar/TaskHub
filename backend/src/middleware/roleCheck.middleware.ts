@@ -120,25 +120,19 @@ export const hasProjectAccess = asyncHandler(
       return next();
     }
 
-    // Check if user is workspace member with project access
-    const workspaceMember = await prisma.workspaceMembers.findUnique({
+    // Check if user has project access through workspace membership
+    const hasAccess = await prisma.projectAccess.findFirst({
       where: {
-        userId_workspaceId: {
+        projectId,
+        hasAccess: true,
+        workspaceMember: {
           userId,
           workspaceId: project.workspaceId,
         },
       },
-      include: {
-        projectAccess: {
-          where: {
-            projectId,
-            hasAccess: true,
-          },
-        },
-      },
     });
 
-    if (!workspaceMember || workspaceMember.projectAccess.length === 0) {
+    if (!hasAccess) {
       throw new ApiError(403, "Access denied. You don't have access to this project.");
     }
 
