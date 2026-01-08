@@ -158,12 +158,14 @@ const createVerificationEmailTemplate = (userName: string, verificationLink: str
 export const sendVerificationEmail = async (
     email: string,
     userName: string,
-    verificationToken: string
+    verificationToken: string,
+    redirect?: string // Optional redirect parameter for invite flow
 ) => {
     try {
         const transporter = await createTransporter();
 
-        const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+        // Include redirect parameter if present (for invite flow)
+        const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''}`;
 
         const mailOptions = {
             from: process.env.EMAIL_FROM || '"TaskHub" <noreply@taskhub.com>',

@@ -355,17 +355,18 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 
     if (!task) throw new ApiError(404, "Task not found");
 
-    await prisma.task.delete({
-        where: { id: taskId }
-    });
-
-    logActivity({
+    // Log deletion BEFORE deleting (to avoid foreign key constraint violation on taskId)
+    await logActivity({
         type: ActivityType.TASK_DELETED,
         description: `Deleted Task "${task.title}"`,
         userId,
         projectId: task.projectId,
-        taskId: taskId
+        // Don't include taskId since the task will be deleted
     }).catch(console.error);
+
+    await prisma.task.delete({
+        where: { id: taskId }
+    });
 
     return res.status(200).json(
         new ApiResponse(200, {}, "Task deleted successfully")

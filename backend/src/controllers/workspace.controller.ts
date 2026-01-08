@@ -223,31 +223,65 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
         throw new ApiError( 404, "Workspace not found");
     }
 
-    //task stats
-    const taskStats = await prisma.task.groupBy({
-        by: ["status"],
-        where: {
-            project: {
-                workspaceId,
+    // Check if user is workspace owner
+    const isOwner = workspace.owner.id === userId;
+
+    // Determine which projects the user has access to
+    let accessibleProjectIds: string[];
+
+    if (isOwner) {
+        // Owner has access to all projects
+        const allProjects = await prisma.project.findMany({
+            where: { workspaceId },
+            select: { id: true }
+        });
+        accessibleProjectIds = allProjects.map(p => p.id);
+    } else {
+        // Member: only projects they have explicit access to IN THIS WORKSPACE
+        const accessibleProjects = await prisma.project.findMany({
+            where: {
+                workspaceId, // Filter by current workspace
+                projectAccess: {
+                    some: {
+                        hasAccess: true,
+                        workspaceMember: {
+                            userId,
+                            workspaceId, // Ensure member belongs to this workspace
+                        }
+                    }
+                }
             },
-        },
-        _count: {
-            status: true,
-        },
-    });
+            select: { id: true }
+        });
+
+        accessibleProjectIds = accessibleProjects.map(p => p.id);
+    }
+
+    //task stats (scoped to accessible projects)
+    const taskStats = accessibleProjectIds.length > 0 
+        ? await prisma.task.groupBy({
+            by: ["status"],
+            where: {
+                projectId: { in: accessibleProjectIds },
+            },
+            _count: {
+                status: true,
+            },
+        })
+        : [];
 
     const totalTasks = taskStats.reduce((sum, t) => sum + t._count.status, 0);
     const completedTasks =
         taskStats.find((t) => t.status === "COMPLETED")?._count.status ?? 0;
     
-    const myTaskCount = await prisma.task.count({
-        where: {
-            assigneeId: userId,
-            project: {
-                workspaceId
+    const myTaskCount = accessibleProjectIds.length > 0
+        ? await prisma.task.count({
+            where: {
+                assigneeId: userId,
+                projectId: { in: accessibleProjectIds },
             },
-        },
-    });
+        })
+        : 0;
 
     //recent members(last 5)
     const recentMembers = await prisma.workspaceMembers.findMany({
@@ -265,48 +299,66 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
         }
     });
 
-    //recent projects
-    const recentProjects = await prisma.project.findMany({
-        where: { workspaceId },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: {
-            id: true,
-            name: true,
-            description: true,
-            createdAt: true,
-            _count: {
-                select: {
-                    tasks: true,
+    //recent projects (scoped to accessible projects)
+    const recentProjects = accessibleProjectIds.length > 0
+        ? await prisma.project.findMany({
+            where: { 
+                id: { in: accessibleProjectIds },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 5,
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        tasks: true,
+                    }
                 }
             }
+        })
+        : [];
+
+    // Task creation trend (last 7 days, scoped to accessible projects)
+    // Optimized: Single query instead of 7 separate queries
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const tasksLast7Days = accessibleProjectIds.length > 0
+        ? await prisma.task.findMany({
+            where: {
+                projectId: { in: accessibleProjectIds },
+                createdAt: { gte: sevenDaysAgo }
+            },
+            select: {
+                createdAt: true
+            }
+        })
+        : [];
+
+    // Group tasks by date in JavaScript (using UTC dates for consistency)
+    const taskCountByDate = new Map<string, number>();
+    tasksLast7Days.forEach(task => {
+        const dateKey = task.createdAt.toISOString().split('T')[0] ?? '';
+        if (dateKey) {
+            taskCountByDate.set(dateKey, (taskCountByDate.get(dateKey) || 0) + 1);
         }
     });
 
-    // Task creation trend (last 7 days)
+    // Build last 7 days array with counts (using UTC dates)
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
         const date = new Date();
-        date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0);
-        const nextDate = new Date(date);
-        nextDate.setDate(nextDate.getDate() + 1);
-        
-        const taskCount = await prisma.task.count({
-            where: {
-                project: {
-                    workspaceId,
-                },
-                createdAt: {
-                    gte: date,
-                    lt: nextDate,
-                },
-            },
-        });
+        date.setUTCDate(date.getUTCDate() - i);
+        date.setUTCHours(0, 0, 0, 0);
+        const dateKey = date.toISOString().split('T')[0] ?? '';
         
         last7Days.push({
-            date: date.toISOString().split('T')[0],
-            tasks: taskCount,
+            date: dateKey,
+            tasks: taskCountByDate.get(dateKey) || 0,
         });
     }
 
@@ -323,7 +375,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
             }
         },
         stats: {
-            totalProjects: workspace._count.projects,
+            totalProjects: accessibleProjectIds.length, // Scoped to user's accessible projects
             totalTasks,
             myTasks: myTaskCount,
             completedTasks,
@@ -347,6 +399,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
             createdAt: p.createdAt,
             taskCount: p._count.tasks
         })),
+        isOwner, // Send to frontend so it knows user's role
     };
 
     return res
