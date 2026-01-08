@@ -8,6 +8,24 @@ interface TaskTrendChartProps {
   loading?: boolean;
 }
 
+// Format date to show day name or "Today"
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const dateToCompare = new Date(date);
+  dateToCompare.setHours(0, 0, 0, 0);
+  
+  // Check if it's today
+  if (dateToCompare.getTime() === today.getTime()) {
+    return 'Today';
+  }
+  
+  // Return short day name (Mon, Tue, etc.)
+  return date.toLocaleDateString('en-US', { weekday: 'short' });
+};
+
 export default function TaskTrendChart({ data, loading }: TaskTrendChartProps) {
   if (loading) {
     return (
@@ -24,6 +42,12 @@ export default function TaskTrendChart({ data, loading }: TaskTrendChartProps) {
   }
 
   const chartData = data || [];
+
+  // Transform data to use formatted dates for display
+  const formattedChartData = chartData.map(item => ({
+    ...item,
+    displayDate: formatDate(item.date),
+  }));
 
   return (
     <Card className="w-full overflow-hidden">
@@ -47,10 +71,10 @@ export default function TaskTrendChart({ data, loading }: TaskTrendChartProps) {
               }}
               className="h-full w-full"
             >
-              <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <LineChart data={formattedChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="displayDate" 
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                 />

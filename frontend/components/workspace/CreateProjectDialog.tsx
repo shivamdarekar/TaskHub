@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { createProject } from "@/redux/slices/projectSlice";
-import { fetchWorkspaceMembers } from "@/redux/slices/workspaceSlice";
+import { fetchWorkspaceMembers, fetchWorkspaceOverview } from "@/redux/slices/workspaceSlice";
 import {
   Dialog,
   DialogContent,
@@ -105,6 +105,9 @@ export default function CreateProjectDialog({
           },
         })
       ).unwrap();
+
+      // Refresh workspace overview so dashboard shows updated stats
+      dispatch(fetchWorkspaceOverview(workspaceId));
 
       // Reset form
       setFormData({ name: "", description: "" });
