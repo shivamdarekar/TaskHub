@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchWorkspaceOverview } from "@/redux/slices/workspaceSlice";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, AlertCircle } from "lucide-react";
 
 import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
 import StatsCards from "@/components/workspace/dashboard/StatsCards";
@@ -33,10 +34,26 @@ export default function WorkspaceDashboardPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen p-8">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-orange-50 p-6">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Workspace Error</h2>
+          </div>
+          
+          <div className="p-6 text-center space-y-4">
+            <p className="text-gray-600 leading-relaxed">{error}</p>
+            
+            <Button
+              onClick={() => router.back()}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold"
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -87,6 +104,7 @@ export default function WorkspaceDashboardPage() {
             workspaceId={workspaceId}
             onCreateProject={() => setCreateProjectOpen(true)}
             onProjectClick={(projectId) => router.push(`/workspace/${workspaceId}/projects/${projectId}`)}
+            isOwner={overview?.isOwner}
           />
         </div>
       </div>

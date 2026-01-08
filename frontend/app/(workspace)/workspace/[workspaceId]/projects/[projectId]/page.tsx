@@ -11,6 +11,7 @@ import RecentComments from "@/components/workspace/project/RecentComments";
 import {
   fetchProjectOverview,
   fetchRecentProjectActivities,
+  fetchProjectMembers,
 } from "@/redux/slices/projectSlice";
 import { getRecentProjectComments } from "@/redux/slices/commentSlice";
 
@@ -34,6 +35,7 @@ export default function ProjectDashboardPage() {
       dispatch(fetchProjectOverview(projectId));
       dispatch(fetchRecentProjectActivities({ projectId, limit: 15 }));
       dispatch(getRecentProjectComments({ projectId, limit: 15 }));
+      dispatch(fetchProjectMembers(projectId));
     }
   }, [projectId, dispatch]);
 
