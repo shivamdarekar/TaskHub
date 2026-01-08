@@ -7,25 +7,30 @@ import {
     joinWorkspaceViaInvite,
     resetInviteLink,
 } from "../controllers/invite.controller";
+import { 
+    inviteLimiter, 
+    joinWorkspaceLimiter, 
+    createInviteLimiter 
+} from "../middleware/rateLimiter";
 
 const router = Router();
 
-// Public route - Get invite details (no auth required)
+// Public route - Get invite details (no auth required but rate limited)
 // Used to display workspace info on join page before authentication
-router.get("/:workspaceId/join/:inviteToken", getInviteDetails);
+router.get("/:workspaceId/join/:inviteToken", inviteLimiter, getInviteDetails);
 
 // Protected routes - Require authentication
 router.use(verifyJWT);
 
-// Create workspace invite (owner only)
+// Create workspace invite (owner only, with rate limiting)
 // Can send email invite or generate shareable link
-router.post("/:workspaceId/create", isWorkspaceOwner, createWorkspaceInvite);
+router.post("/:workspaceId/create", isWorkspaceOwner, createInviteLimiter, createWorkspaceInvite);
 
-// Join workspace via invite token (authenticated users only)
-router.post("/:workspaceId/join/:inviteToken", joinWorkspaceViaInvite);
+// Join workspace via invite token (authenticated users only, strict rate limiting)
+router.post("/:workspaceId/join/:inviteToken", joinWorkspaceLimiter, joinWorkspaceViaInvite);
 
-// Reset/revoke invite link (owner only)
+// Reset/revoke invite link (owner only, with rate limiting)
 // Deletes old links and generates new token
-router.post("/:workspaceId/reset", isWorkspaceOwner, resetInviteLink);
+router.post("/:workspaceId/reset", isWorkspaceOwner, createInviteLimiter, resetInviteLink);
 
 export default router;

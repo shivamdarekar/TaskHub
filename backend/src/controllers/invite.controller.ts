@@ -141,6 +141,12 @@ export const joinWorkspaceViaInvite = asyncHandler(async(req:Request, res:Respon
     if(!userId) throw new ApiError(401, "Not Authorized");
     if(!workspaceId || !inviteToken) throw new ApiError(400, "Invalid invite token");
 
+    //get current user's email first (needed for email-specific invite validation)
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true }
+    });
+
     //verify invite
     const invite = await prisma.workspaceInvite.findUnique({
         where:{
@@ -169,7 +175,13 @@ export const joinWorkspaceViaInvite = asyncHandler(async(req:Request, res:Respon
         throw new ApiError(400, "This invite link has expired");
     }
 
-    //check if user is already a member
+    //Check email match BEFORE checking membership to fail fast
+    //This prevents unauthorized users from even checking if they're members
+    if(invite.email && user?.email !== invite.email){
+        throw new ApiError(403, "This invite was sent to a different email address");
+    }
+
+    //check if user is already a member BEFORE transaction (idempotent operation)
     const existingMember = await prisma.workspaceMembers.findUnique({
         where:{
             userId_workspaceId: {
@@ -179,20 +191,34 @@ export const joinWorkspaceViaInvite = asyncHandler(async(req:Request, res:Respon
         }
     });
 
-    if(existingMember) throw new ApiError(400, "You are already member of this workspace");
-
-    //if email was specified, verify its matches
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true }
-    });
-
-    if(invite.email && user?.email !== invite.email){
-        throw new ApiError(403, "This invite was sent to a different email address");
+    //if already a member, return success (idempotent behavior)
+    if(existingMember) {
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                { workspaceId, member: existingMember, alreadyMember: true },
+                "You are already a member of this workspace"
+            )
+        );
     }
 
     //add user to workspace with race-safe invite consumption
     const member = await prisma.$transaction(async (tx) => {
+        //double-check membership inside transaction for race safety
+        const memberCheck = await tx.workspaceMembers.findUnique({
+            where:{
+                userId_workspaceId: {
+                    userId,
+                    workspaceId
+                }
+            }
+        });
+
+        //if someone joined between our check and transaction, return existing member
+        if(memberCheck) {
+            return { member: memberCheck, alreadyMember: true };
+        }
+
         //conditionally mark invite as used (only if not already used)
         //this prevents race conditions where two requests try to use the same invite
         const updateResult = await tx.workspaceInvite.updateMany({
@@ -217,14 +243,16 @@ export const joinWorkspaceViaInvite = asyncHandler(async(req:Request, res:Respon
             }
         });
 
-        return newMember
+        return { member: newMember, alreadyMember: false };
     });
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            { workspaceId, member },
-            `Successfully joined ${invite.workspace.name}`
+            { workspaceId, member: member.member, alreadyMember: member.alreadyMember },
+            member.alreadyMember 
+                ? "You are already a member of this workspace"
+                : `Successfully joined ${invite.workspace.name}`
         )
     )
 });
