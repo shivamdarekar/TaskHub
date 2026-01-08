@@ -16,6 +16,7 @@ interface RecentProjectsProps {
   workspaceId: string;
   onCreateProject: () => void;
   onProjectClick: (projectId: string) => void;
+  isOwner?: boolean; // Add this to know if user is owner
 }
 
 export default function RecentProjects({
@@ -24,6 +25,7 @@ export default function RecentProjects({
   workspaceId,
   onCreateProject,
   onProjectClick,
+  isOwner = false,
 }: RecentProjectsProps) {
   if (loading) {
     return (
@@ -88,12 +90,27 @@ export default function RecentProjects({
       <CardContent className="pb-6">
         <div className="space-y-3">
           {displayProjects.length === 0 ? (
-            <div className="text-center py-2">
-              <p className="text-sm text-gray-500 mb-4">No recent projects</p>
-              <Button onClick={onCreateProject} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Project
-              </Button>
+            <div className="text-center py-8 px-4">
+              <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <FolderKanban className="h-6 w-6 text-gray-400" />
+              </div>
+              {isOwner ? (
+                <>
+                  <p className="text-sm font-medium text-gray-900 mb-1">No projects yet</p>
+                  <p className="text-xs text-gray-500 mb-4">Create your first project to get started</p>
+                  <Button onClick={onCreateProject} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Project
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-gray-900 mb-1">No projects assigned yet</p>
+                  <p className="text-xs text-gray-500">
+                    Contact the workspace owner to get added to projects
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             displayProjects.map((project) => (
