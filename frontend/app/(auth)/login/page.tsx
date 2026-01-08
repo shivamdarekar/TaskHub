@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,10 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
+
+  const redirect = searchParams.get("redirect");
 
   const { loading, error, isAuthenticated } = useAppSelector(
     (state) => state.auth
@@ -50,6 +53,13 @@ export default function LoginPage() {
     if (!isMountedRef.current) return;
     setIsCheckingWorkspaces(true);
     try{
+      // If there's a redirect param (from invite), go there
+      if (redirect) {
+        router.replace(redirect);
+        return;
+      }
+
+      // Otherwise, normal workspace navigation
       const result = await dispatch(fetchUserWorkspaces()).unwrap();
       if (!isMountedRef.current) return;
       if (result.length == 0) {
@@ -73,6 +83,14 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated && !loading && !hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
+      
+      // If there's a redirect param, go there directly
+      if (redirect) {
+        router.replace(redirect);
+        return;
+      }
+
+      // Otherwise, fetch workspaces and navigate
       dispatch(fetchUserWorkspaces()).unwrap().then((workspaces) => {
         if (workspaces.length > 0) {
           router.replace(`/workspace/${workspaces[0].id}`);
@@ -84,7 +102,7 @@ export default function LoginPage() {
         hasRedirectedRef.current = false; // Allow retry on error
       });
     }
-  }, [isAuthenticated, loading, router, dispatch]);
+  }, [isAuthenticated, loading, router, dispatch, redirect]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -264,7 +282,7 @@ export default function LoginPage() {
             <p className="text-gray-600 mt-2">
               New to TaskHub?{" "}
               <Link
-                href="/register"
+                href={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
                 className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
               >
                 Create an account

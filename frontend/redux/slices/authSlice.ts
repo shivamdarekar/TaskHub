@@ -30,6 +30,7 @@ interface RegisterData {
   name: string;
   email: string;
   password: string;
+  redirect?: string; // Optional redirect for invite flow
 }
 
 interface Verify2FAData {
@@ -103,14 +104,12 @@ export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post(
-        "/api/v1/users/register",
-        userData
-      );
+      const { redirect, ...registerData } = userData;
+      const url = `/api/v1/users/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`;
+      const response = await axiosInstance.post(url, registerData);
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(handleAxiosError(error, "Registration failed"));
-
     }
   }
 );

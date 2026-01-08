@@ -52,6 +52,7 @@ interface Verify2FABody {
 //register User
 const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>, res: Response) => {
   const { name, email, password } = req.body;
+  const redirect = req.query.redirect as string | undefined; // Get redirect from query params
 
   if (!name || !email || !password) throw new ApiError(400, "All fields are required");
 
@@ -72,8 +73,8 @@ const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>,
   //generate verification token
   const verificationToken = generateEmailVerificationToken(user.id);
 
-  //send email with verification link
-  await sendVerificationEmail(user.email, user.name, verificationToken);
+  //send email with verification link (include redirect if present)
+  await sendVerificationEmail(user.email, user.name, verificationToken, redirect);
 
   return res
     .status(201)

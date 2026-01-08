@@ -8,15 +8,18 @@ import Link from "next/link";
 import { CheckCircle, EyeIcon, EyeOffIcon, Loader2, LayoutGrid } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { registerUser,clearError } from "@/redux/slices/authSlice";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthNavbar from "@/components/AuthNavbar";
 import { fetchUserWorkspaces } from "@/redux/slices/workspaceSlice";
 
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  const redirect = searchParams.get("redirect");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -32,7 +35,14 @@ export default function RegisterPage() {
   useEffect(() => {
   if (isAuthenticated && !hasRedirectedRef.current) {
     hasRedirectedRef.current = true;
-    // Fetch workspaces and redirect
+    
+    // If there's a redirect param, go there directly
+    if (redirect) {
+      router.replace(redirect);
+      return;
+    }
+
+    // Otherwise, fetch workspaces and redirect
     dispatch(fetchUserWorkspaces()).unwrap().then((workspaces) => {
       if (workspaces.length > 0) {
         router.replace(`/workspace/${workspaces[0].id}`);
@@ -44,7 +54,7 @@ export default function RegisterPage() {
       hasRedirectedRef.current = false; // Allow retry on error
     });
   }
-}, [isAuthenticated, router, dispatch]);
+}, [isAuthenticated, router, dispatch, redirect]);
 
   useEffect(() => {
     return () => {
@@ -103,7 +113,11 @@ export default function RegisterPage() {
     if (!validateForm()) return;
     
     try {
-      await dispatch(registerUser(formData)).unwrap();
+      // Include redirect parameter if present (for invite flow)
+      await dispatch(registerUser({ 
+        ...formData, 
+        redirect: redirect || undefined 
+      })).unwrap();
 
       setIsSuccess(true);
       setFormData({
@@ -138,7 +152,7 @@ export default function RegisterPage() {
             <p className="text-gray-600 mt-2">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
                 className="text-purple-600 hover:text-purple-700 font-semibold transition-colors"
               >
                 Sign in

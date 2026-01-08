@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const redirect = searchParams.get("redirect"); // Preserve redirect from registration
   
   const [verificationStatus, setVerificationStatus] = useState<
     "loading" | "success" | "error" | "invalid"
@@ -107,9 +108,9 @@ export default function VerifyEmailPage() {
               <p className="text-gray-600 mb-6">
                 Your email has been verified. You can now sign in to your account.
               </p>
-              <Link href="/login">
+              <Link href={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}>
                 <Button className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white h-11 font-semibold shadow-lg hover:shadow-xl transition-all">
-                  Sign In
+                  Sign In{redirect ? ' to Join Workspace' : ''}
                 </Button>
               </Link>
             </div>
@@ -127,12 +128,12 @@ export default function VerifyEmailPage() {
                 {message}
               </p>
               <div className="flex flex-col gap-3">
-                <Link href="/register" className="w-full">
+                <Link href={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="w-full">
                   <Button className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white h-11 font-semibold shadow-lg hover:shadow-xl transition-all">
                     Register Again
                   </Button>
                 </Link>
-                <Link href="/resend-verification" className="w-full">
+                <Link href={`/resend-verification${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="w-full">
                   <Button variant="outline" className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 h-11 font-semibold transition-all">
                     Resend Verification
                   </Button>
@@ -153,12 +154,12 @@ export default function VerifyEmailPage() {
                 The verification link appears to be invalid. Please check your email for the correct link or request a new verification email.
               </p>
               <div className="flex flex-col gap-3">
-                <Link href="/login" className="w-full">
+                <Link href={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="w-full">
                   <Button className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white h-11 font-semibold shadow-lg hover:shadow-xl transition-all">
                     Back to Login
                   </Button>
                 </Link>
-                <Link href="/resend-verification" className="w-full">
+                <Link href={`/resend-verification${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="w-full">
                   <Button variant="outline" className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 h-11 font-semibold transition-all">
                     Resend Verification
                   </Button>
