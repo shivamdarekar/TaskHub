@@ -209,6 +209,7 @@ export default function CreateProjectDialog({
                         id={member.id}
                         checked={selectedMembers.includes(member.id)}
                         onCheckedChange={() => handleMemberToggle(member.id)}
+                        className="border-gray-400"
                         disabled={projectsLoading}
                       />
                       <Avatar className="h-8 w-8">

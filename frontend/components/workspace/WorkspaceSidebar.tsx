@@ -279,7 +279,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
           {/* MENU SECTION */}
           <div className="px-3 mb-4">
             {!isCollapsed && (
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 px-2">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 px-2">
                 Menu
               </p>
             )}
@@ -312,18 +312,18 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
           <div className="px-3">
             {!isCollapsed && (
               <div className="flex items-center justify-between mb-2 px-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                   Projects
                 </p>
 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 hover:bg-blue-50 hover:text-blue-600"
+                  className="h-6 w-6 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-800 border border-gray-200 hover:border-gray-300 transition-all duration-200"
                   onClick={() => setCreateProjectOpen(true)}
                   title="Create new Project"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -363,7 +363,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
                         >
                           <FolderKanban className={cn(
                             "h-4 w-4 shrink-0",
-                            isActive ? "text-blue-600" : "text-gray-500 group-hover:text-blue-600"
+                            isActive ? "text-blue-600" : "text-gray-600 group-hover:text-blue-600"
                           )} />
                           <span className="truncate">{project.name}</span>
                         </button>
