@@ -23,6 +23,12 @@ declare global {
         assigneeId?: string | null;
         projectOwnerId: string;
       };
+      project?: {
+        id: string;
+        workspaceId: string;
+        createdBy: string;
+        workspaceOwnerId: string;
+      };
     }
   }
 }
