@@ -73,6 +73,7 @@ interface ProjectState {
     projectsLoading: boolean;
     currentProject: ProjectBasicInfo | null;
     currentProjectLoading: boolean;
+    deleting: boolean;
     overview: ProjectOverview | null; 
     overviewLoading: boolean;
     activities: Activity[];
@@ -89,6 +90,10 @@ interface ProjectState {
     recentActivitiesLoading: boolean;
     members: ProjectMemberDetails[];
     membersLoading: boolean;
+    availableMembers: AvailableMember[];
+    availableMembersLoading: boolean;
+    addingMembers: boolean;
+    removingMember: boolean;
     error: string | null;
 }
 
@@ -115,6 +120,14 @@ interface ProjectMemberDetails {
     joinedAt: string;
 }
 
+interface AvailableMember {
+    id: string;
+    name: string;
+    email: string;
+    accessLevel: string;
+    joinedAt: string;
+}
+
 interface CreateProjectData {
     name: string;
     description?: string;
@@ -131,6 +144,7 @@ const initialState: ProjectState = {
     projectsLoading: false,
     currentProject: null,
     currentProjectLoading: false,
+    deleting: false,
     overview: null,
     overviewLoading: false,
     activities: [],
@@ -140,6 +154,10 @@ const initialState: ProjectState = {
     recentActivitiesLoading: false,
     members: [],
     membersLoading: false,
+    availableMembers: [],
+    availableMembersLoading: false,
+    addingMembers: false,
+    removingMember: false,
     error: null,
 };
 
@@ -269,6 +287,50 @@ export const deleteProject = createAsyncThunk(
             return projectId;
         } catch (error: unknown) {
             return rejectWithValue(handleAxiosError(error, "Failed to delete the project"));
+        }
+    }
+);
+
+export const fetchAvailableMembers = createAsyncThunk(
+    "project/fetchAvailableMembers",
+    async(projectId: string, {rejectWithValue}) => {
+       try {
+            const response = await axiosInstance.get(
+                `/api/v1/project/${projectId}/available-members`
+            );
+            return response.data.data.members;
+        } catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to fetch available members"));
+        }
+    }
+);
+
+export const addProjectMembers = createAsyncThunk(
+    "project/addMembers",
+    async({projectId, memberIds}: {projectId: string, memberIds: string[]}, {rejectWithValue}) => {
+       try {
+            const response = await axiosInstance.post(
+                `/api/v1/project/${projectId}/members`,
+                { memberIds }
+            );
+            return response.data.data;
+        } catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to add members"));
+        }
+    }
+);
+
+export const removeProjectMember = createAsyncThunk(
+    "project/removeMember",
+    async({projectId, userId}: {projectId: string, userId: string}, {rejectWithValue}) => {
+       try {
+            const response = await axiosInstance.delete(
+                `/api/v1/project/${projectId}/members`,
+                { data: { userId } }
+            );
+            return { removedUserId: userId, removedMember: response.data.data.removedMember };
+        } catch (error: unknown) {
+            return rejectWithValue(handleAxiosError(error, "Failed to remove member"));
         }
     }
 );
@@ -442,11 +504,11 @@ const projectSlice = createSlice({
 
             //delete project
             .addCase(deleteProject.pending, (state) => {
-                state.projectsLoading = true;
+                state.deleting = true;
                 state.error = null;
             })
             .addCase(deleteProject.fulfilled, (state, action: PayloadAction<string>) => {
-                state.projectsLoading = false;
+                state.deleting = false;
 
                 // remove from list
                 //filter creates a new array excluding the current id
@@ -464,7 +526,83 @@ const projectSlice = createSlice({
                 state.error = null;
             })
             .addCase(deleteProject.rejected, (state, action) => {
-                state.projectsLoading = false;
+                state.deleting = false;
+                state.error = action.payload as string;
+            })
+
+            // Fetch available members
+            .addCase(fetchAvailableMembers.pending, (state) => {
+                state.availableMembersLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchAvailableMembers.fulfilled, (state, action: PayloadAction<AvailableMember[]>) => {
+                state.availableMembersLoading = false;
+                state.availableMembers = action.payload;
+                state.error = null;
+            })
+            .addCase(fetchAvailableMembers.rejected, (state, action) => {
+                state.availableMembersLoading = false;
+                state.error = action.payload as string;
+            })
+
+            // Add project members
+            .addCase(addProjectMembers.pending, (state) => {
+                state.addingMembers = true;
+                state.error = null;
+            })
+            .addCase(addProjectMembers.fulfilled, (state, action) => {
+                state.addingMembers = false;
+                
+                // Backend returns: { addedCount: number, members: Array<{id, name, email}> }
+                const addedMembers = action.payload.members;
+                const addedUserIds = addedMembers.map((m: { id: string; name: string; email: string }) => m.id);
+                
+                // Remove added members from available members list
+                state.availableMembers = state.availableMembers.filter(
+                    member => !addedUserIds.includes(member.id)
+                );
+                
+                // Note: Components should call fetchProjectMembers to refresh the members list
+                // Or you can add the new members to state.members here if you have full member details
+                
+                state.error = null;
+            })
+            .addCase(addProjectMembers.rejected, (state, action) => {
+                state.addingMembers = false;
+                state.error = action.payload as string;
+            })
+
+            // Remove project member
+            .addCase(removeProjectMember.pending, (state) => {
+                state.removingMember = true;
+                state.error = null;
+            })
+            .addCase(removeProjectMember.fulfilled, (state, action) => {
+                state.removingMember = false;
+                
+                // Backend returns: { removedMember: {id, name, email} }
+                const { removedUserId, removedMember } = action.payload;
+                
+                // Remove member from members list
+                state.members = state.members.filter(
+                    member => member.userId !== removedUserId
+                );
+                
+                // Add removed member back to available members
+                if (removedMember) {
+                    state.availableMembers.push({
+                        id: removedMember.id,
+                        name: removedMember.name,
+                        email: removedMember.email,
+                        accessLevel: 'MEMBER', // Default access level
+                        joinedAt: new Date().toISOString()
+                    });
+                }
+                
+                state.error = null;
+            })
+            .addCase(removeProjectMember.rejected, (state, action) => {
+                state.removingMember = false;
                 state.error = action.payload as string;
             })
             
