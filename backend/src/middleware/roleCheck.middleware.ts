@@ -74,7 +74,10 @@ export const canManageProject = asyncHandler(
 
     const project = await prisma.project.findUnique({
       where: { id: projectId },
-      include: {
+      select: {
+        id: true,
+        workspaceId: true,
+        createdBy: true,
         workspace: {
           select: { ownerId: true },
         },
@@ -88,6 +91,14 @@ export const canManageProject = asyncHandler(
     if (project.workspace.ownerId !== userId) {
       throw new ApiError(403, "Access denied. Only workspace owner can manage projects.");
     }
+
+    // Attach project data to request for use in controllers
+    req.project = {
+      id: project.id,
+      workspaceId: project.workspaceId,
+      createdBy: project.createdBy,
+      workspaceOwnerId: project.workspace.ownerId
+    };
 
     next();
   }
