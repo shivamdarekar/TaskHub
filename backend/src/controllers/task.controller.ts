@@ -118,11 +118,12 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
 export const getTaskById = asyncHandler(async (req: Request, res: Response) => {
     const { taskId } = req.params;
     const userId = req.user?.id;
+    const task = req.task; // Get from middleware
 
     if (!userId) throw new ApiError(401, "Not Authorized");
-    if (!taskId) throw new ApiError(400, "Task ID is required");
+    if (!task) throw new ApiError(500, "Task data not found in request");
 
-    const task = await prisma.task.findUnique({
+    const fullTask = await prisma.task.findUnique({
         where: { id: taskId },
         include: {
             creator: {
@@ -155,10 +156,10 @@ export const getTaskById = asyncHandler(async (req: Request, res: Response) => {
         }
     });
 
-    if (!task) throw new ApiError(404, "Task not found");
+    if (!fullTask) throw new ApiError(404, "Task not found");
 
     return res.status(200).json(
-        new ApiResponse(200, { task }, "Task fetched successfully")
+        new ApiResponse(200, { task: fullTask }, "Task fetched successfully")
     )
 });
 
@@ -238,7 +239,7 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
     const updates: UpdateTaskBody = req.body;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
-    if (!taskId) throw new ApiError(400, "TaskId & ProjectId is required");
+    if(!taskId) throw new ApiError(400, "TaskID is required");
 
     const existingTask = await prisma.task.findUnique({
         where: { id: taskId },
@@ -287,7 +288,7 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
     if (updates.dueDate !== undefined) updateData.dueDate = updates.dueDate ? new Date(updates.dueDate) : null;
     if (updates.assigneeId !== undefined) updateData.assigneeId = updates.assigneeId || null;
 
-    const task = await prisma.task.update({
+    const updatedTask = await prisma.task.update({
         where: { id: taskId },
         data: updateData,
         include: {
@@ -300,26 +301,26 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
         }
     });
 
-    if (!task) throw new ApiError(403, "Failed to update task");
+    if (!updatedTask) throw new ApiError(403, "Failed to update task");
 
     // Log significant changes
     if (updates.status && updates.status !== existingTask.status) {
         logActivity({
             type: ActivityType.TASK_STATUS_CHANGED,
-            description: `Changed task "${task.title}" status from ${existingTask.status} to ${updates.status}`,
+            description: `Changed task "${existingTask.title}" status from ${existingTask.status} to ${updates.status}`,
             userId,
             projectId: existingTask.projectId,
-            taskId: task.id
+            taskId: updatedTask.id
         }).catch(console.error);
     }
 
     if (updates.priority && updates.priority != existingTask.priority) {
         logActivity({
             type: ActivityType.TASK_PRIORITY_CHANGED,
-            description: `Changed task "${task.title}" priority from ${existingTask.priority} to ${updates.priority}`,
+            description: `Changed task "${existingTask.title}" priority from ${existingTask.priority} to ${updates.priority}`,
             userId,
             projectId: existingTask.projectId,
-            taskId: task.id
+            taskId: updatedTask.id
         }).catch(console.error);
     }
 
@@ -327,16 +328,16 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
         logActivity({
             type: ActivityType.TASK_ASSIGNED,
             description: updates.assigneeId
-                ? `Assigned task "${task.title}" to ${task.assignedTo?.name}`
-                : `Unassigned task "${task.title}"`,
+                ? `Assigned task "${existingTask.title}" to ${updatedTask.assignedTo?.name}`
+                : `Unassigned task "${existingTask.title}"`,
             userId,
             projectId: existingTask.projectId,
-            taskId: task.id
+            taskId: updatedTask.id
         }).catch(console.error);
     }
 
     return res.status(200).json(
-        new ApiResponse(200, { task }, "Task updated successfully")
+        new ApiResponse(200, { task: updatedTask }, "Task updated successfully")
     )
 });
 
@@ -344,23 +345,24 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
 export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
     const { taskId } = req.params;
     const userId = req.user?.id;
+    const task = req.task; // Get from middleware
 
     if (!userId) throw new ApiError(401, "Not Authorized");
-    if (!taskId) throw new ApiError(400, "TaskId and ProjectId is required");
+    if (!task) throw new ApiError(500, "Task data not found in request");
 
-    const task = await prisma.task.findUnique({
+    const taskData = await prisma.task.findUnique({
         where: { id: taskId },
         select: { title: true, projectId: true },
     });
 
-    if (!task) throw new ApiError(404, "Task not found");
+    if (!taskData) throw new ApiError(404, "Task not found");
 
     // Log deletion BEFORE deleting (to avoid foreign key constraint violation on taskId)
-    await logActivity({
+     logActivity({
         type: ActivityType.TASK_DELETED,
-        description: `Deleted Task "${task.title}"`,
+        description: `Deleted Task "${taskData.title}"`,
         userId,
-        projectId: task.projectId,
+        projectId: taskData.projectId,
         // Don't include taskId since the task will be deleted
     }).catch(console.error);
 
@@ -430,30 +432,31 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
     const { taskId } = req.params;
     const { toStatus, toPosition } = req.body;
     const userId = req.user?.id;
+    const task = req.task; // Get from middleware
 
     if (!userId) throw new ApiError(400, "Not authorized");
-    if (!taskId) throw new ApiError(401, "TaskId is required");
+    if (!task) throw new ApiError(500, "Task data not found in request");
 
     if (!Object.values(TaskStatus).includes(toStatus)) {
         throw new ApiError(400, "Invalid task status");
     }
 
-    const task = await prisma.task.findUnique({
+    const taskData = await prisma.task.findUnique({
         where: { id: taskId },
         select: { id: true, title:true, status: true, position: true, projectId: true }
     });
 
-    if (!task) throw new ApiError(404, "Task not found");
+    if (!taskData) throw new ApiError(404, "Task not found");
 
-    const oldStatus = task.status
+    const oldStatus = taskData.status
 
     await prisma.$transaction(async (tx) => {
         //close gap in old column
         await tx.task.updateMany({
             where: {
-                projectId: task.projectId,
-                status: task.status,
-                position: { gt: task.position }
+                projectId: taskData.projectId,
+                status: taskData.status,
+                position: { gt: taskData.position }
             },
             data: { position: { decrement: 1 } }
         });
@@ -461,7 +464,7 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
         //make space in new column
         await tx.task.updateMany({
             where: {
-                projectId: task.projectId,
+                projectId: taskData.projectId,
                 status: toStatus,
                 position: { gte: toPosition }
             },
@@ -481,10 +484,10 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
     if (oldStatus !== toStatus) {
         logActivity({
             type: ActivityType.TASK_STATUS_CHANGED,
-            description: `Moved task "${truncateTitle(task.title)}" from ${formatStatusForDisplay(oldStatus)} to ${formatStatusForDisplay(toStatus)}`,
+            description: `Moved task "${truncateTitle(taskData.title)}" from ${formatStatusForDisplay(oldStatus)} to ${formatStatusForDisplay(toStatus)}`,
             userId,
-            projectId: task.projectId,
-            taskId: task.id
+            projectId: taskData.projectId,
+            taskId: taskData.id
         }).catch(console.error);
     }
     
