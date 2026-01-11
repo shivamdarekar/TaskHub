@@ -7,7 +7,7 @@ import {
   isWorkspaceOwner
 } from "../middleware/roleCheck.middleware";
 import { validate } from "../config/validate";
-import { createProjectSchema, updateProjectSchema } from "../config/schema";
+import { createProjectSchema, updateProjectSchema, addProjectMembersSchema, removeProjectMemberSchema } from "../config/schema";
 import {
   createProject,
   getProjectBasicInfo,
@@ -17,7 +17,10 @@ import {
   getProjectActivities,
   getProjectOverview,
   getWorkspaceProjects,
-  getRecentProjectActivities
+  getRecentProjectActivities,
+  addProjectMembers,
+  removeProjectMember,
+  getAvailableMembers
 } from "../controllers/project.controller";
 
 
@@ -49,6 +52,13 @@ router.get("/:projectId/overview", hasProjectAccess, getProjectOverview);
 router.patch("/:projectId", canManageProject, validate(updateProjectSchema), updateProject);
 
 router.delete("/:projectId", canManageProject, deleteProject);
+
+// Project member management routes
+router.get("/:projectId/available-members", canManageProject, getAvailableMembers);
+
+router.post("/:projectId/members", canManageProject, validate(addProjectMembersSchema), addProjectMembers);
+
+router.delete("/:projectId/members", canManageProject, validate(removeProjectMemberSchema), removeProjectMember);
 
 export default router;
 

@@ -8,7 +8,7 @@ import { Request, Response } from "express";
 interface ProjectBody {
     name: string;
     description?: string;
-    memberIds?: string[]; //array of user IDs to grant access
+    memberIds?: string[]; // array of WORKSPACE MEMBER IDs (not user IDs) to grant access
 }
 
 interface UpdateProjectBody {
@@ -25,7 +25,7 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
     if (!workspaceId) throw new ApiError(401, "WorkspaceId is required");
     if (!name?.trim()) throw new ApiError(400, "Project name is required");
 
-    //find the workspace member id of the creator
+    // Find the workspace member id of the creator
     const creatorMembership = await prisma.workspaceMembers.findUnique({
         where: {
             userId_workspaceId: { userId, workspaceId },
@@ -46,32 +46,49 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
             }
         });
 
-        //give access to creator
-        await tx.projectAccess.create({
-            data: {
-                projectId: newProject.id,
-                workspaceMemberId: creatorMembership.id,
-                hasAccess: true
-            }
-        });
-
-        //grant access to other members(other than owner)
+        // Grant access to selected members (if any)
+        // FIXED: memberIds are WORKSPACE MEMBER IDs, not user IDs
         if (memberIds && memberIds.length > 0) {
+            // Validate that all memberIds belong to this workspace
             const validMembers = await tx.workspaceMembers.findMany({
                 where: {
                     workspaceId,
-                    userId: { in: memberIds }
+                    id: { in: memberIds } 
                 }
             });
 
-            const accessRecords = validMembers.map((m) => ({
-                projectId: newProject.id,
-                workspaceMemberId: m.id,
-                hasAccess: true,
-            }))
+            if (validMembers.length > 0) {
+                const accessRecords = validMembers.map((m) => ({
+                    projectId: newProject.id,
+                    workspaceMemberId: m.id,
+                    hasAccess: true,
+                }));
 
-            await tx.projectAccess.createMany({ data: accessRecords })
+                await tx.projectAccess.createMany({ 
+                    data: accessRecords,
+                    skipDuplicates: true 
+                });
+            }
         }
+
+        // Always grant access to the creator (owner) - use upsert to avoid duplicates
+        // This ensures creator always has access even if they selected themselves
+        await tx.projectAccess.upsert({
+            where: {
+                workspaceMemberId_projectId: {
+                    workspaceMemberId: creatorMembership.id,
+                    projectId: newProject.id,
+                }
+            },
+            create: {
+                projectId: newProject.id,
+                workspaceMemberId: creatorMembership.id,
+                hasAccess: true,
+            },
+            update: {
+                hasAccess: true,
+            }
+        });
 
         return newProject;
     });
@@ -291,9 +308,10 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
     const { projectId } = req.params;
     const { name, description }: UpdateProjectBody = req.body;
     const userId = req.user?.id;
+    const project = req.project; // Get from middleware
 
-    if (!projectId) throw new ApiError(401, "ProjectId is required")
     if (!userId) throw new ApiError(400, "Not Authorized");
+    if (!project) throw new ApiError(500, "Project data not found in request");
 
     if (!name && description === undefined) {
         throw new ApiError(400, "Atleast one field is required");
@@ -358,36 +376,16 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
 export const deleteProject = asyncHandler(async (req: Request, res: Response) => {
     const { projectId } = req.params;
     const userId = req.user?.id;
+    const project = req.project; // Get from middleware
 
-    if (!projectId) throw new ApiError(401, "ProjectId is required");
     if (!userId) throw new ApiError(400, "Not authorized");
-
-    const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: {
-            name: true,
-            workspaceId: true,
-        }
-    });
-
-    if (!project) throw new ApiError(404, "Project not found");
+    if (!project) throw new ApiError(500, "Project data not found in request");
 
     const deleteProject = await prisma.project.delete({
         where: { id: projectId },
     });
 
     if (!deleteProject) throw new ApiError(403, "Error while deleting the Project");
-
-    // Log deletion (async, doesn't block response if it fails)
-    logActivity({
-        type: ActivityType.PROJECT_DELETED,
-        description: `Deleted project "${project.name}"`,
-        userId,
-        projectId,
-    }).catch((err) => {
-        console.error(`Failed to log activity for project ${projectId}:`, err);
-        // Don't throw - activity logging failure shouldn't break the response
-    });
 
     return res.status(200)
         .json(
@@ -525,4 +523,212 @@ export const getRecentProjectActivities = asyncHandler(async (req, res) => {
       "Recent activities fetched"
     )
   );
+});
+
+
+// Add members to project
+export const addProjectMembers = asyncHandler(async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const { memberIds }: { memberIds: string[] } = req.body;
+    const userId = req.user?.id;
+    const project = req.project; // Get from middleware
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!project) throw new ApiError(500, "Project data not found in request");
+
+    // Get workspace members for the provided user IDs
+    const workspaceMembers = await prisma.workspaceMembers.findMany({
+        where: {
+            workspaceId: project.workspaceId,
+            userId: { in: memberIds }
+        },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
+        }
+    });
+
+    if (workspaceMembers.length === 0) {
+        throw new ApiError(400, "No valid workspace members found");
+    }
+
+    // Check which members already have access
+    const existingAccess = await prisma.projectAccess.findMany({
+        where: {
+            projectId,
+            workspaceMemberId: { in: workspaceMembers.map(m => m.id) }
+        },
+        select: { workspaceMemberId: true }
+    });
+
+    const existingMemberIds = new Set(existingAccess.map(a => a.workspaceMemberId));
+    const newMembers = workspaceMembers.filter(m => !existingMemberIds.has(m.id));
+
+    if (newMembers.length === 0) {
+        throw new ApiError(400, "All selected members already have access to this project");
+    }
+
+    // Add new members to project
+    await prisma.projectAccess.createMany({
+        data: newMembers.map(m => ({
+            projectId,
+            workspaceMemberId: m.id,
+            hasAccess: true
+        })),
+        skipDuplicates: true
+    });
+
+    // Log activity for each new member
+    const activityPromises = newMembers.map(member =>
+        logActivity({
+            type: ActivityType.PROJECT_MEMBER_ADDED,
+            description: `Added ${member.User.name} to project`,
+            userId,
+            projectId,
+        }).catch(err => console.error(`Failed to log activity:`, err))
+    );
+
+    await Promise.all(activityPromises);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { addedCount: newMembers.length, members: newMembers.map(m => m.User) },
+            `Successfully added ${newMembers.length} member(s) to project`
+        )
+    );
+});
+
+
+// Remove member from project
+export const removeProjectMember = asyncHandler(async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const { userId: memberUserId }: { userId: string } = req.body;
+    const userId = req.user?.id;
+    const project = req.project; // Get from middleware
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!memberUserId) throw new ApiError(400, "Member user ID is required");
+    if (!project) throw new ApiError(500, "Project data not found in request");
+
+    // Prevent removing yourself
+    if (memberUserId === userId) {
+        throw new ApiError(400, "You cannot remove yourself from the project");
+    }
+
+    // Cannot remove the project creator
+    if (project.createdBy === memberUserId) {
+        throw new ApiError(400, "Cannot remove project creator from the project");
+    }
+
+    // Get workspace member record
+    const workspaceMember = await prisma.workspaceMembers.findUnique({
+        where: {
+            userId_workspaceId: {
+                userId: memberUserId,
+                workspaceId: project.workspaceId
+            }
+        },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
+        }
+    });
+
+    if (!workspaceMember) {
+        throw new ApiError(404, "Member not found in workspace");
+    }
+
+    // Check if member has project access
+    const projectAccess = await prisma.projectAccess.findFirst({
+        where: {
+            projectId,
+            workspaceMemberId: workspaceMember.id
+        }
+    });
+
+    if (!projectAccess) {
+        throw new ApiError(400, "Member does not have access to this project");
+    }
+
+    // Remove project access
+    await prisma.projectAccess.delete({
+        where: {
+            id: projectAccess.id
+        }
+    });
+
+    // Log activity
+    logActivity({
+        type: ActivityType.PROJECT_MEMBER_REMOVED,
+        description: `Removed ${workspaceMember.User.name} from project`,
+        userId,
+        projectId,
+    }).catch(err => console.error(`Failed to log activity:`, err));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { removedMember: workspaceMember.User },
+            "Member removed from project successfully"
+        )
+    );
+});
+
+
+// Get available workspace members (not in project)
+export const getAvailableMembers = asyncHandler(async (req: Request, res: Response) => {
+    const { projectId } = req.params;
+    const userId = req.user?.id;
+    const project = req.project; // Get from middleware
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!project) throw new ApiError(500, "Project data not found in request");
+
+    // Get workspace members who don't have access to this project
+    const availableMembersData = await prisma.workspaceMembers.findMany({
+        where: {
+            workspaceId: project.workspaceId,
+            projectAccess: {
+                none: {
+                    projectId
+                }
+            }
+        },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
+        }
+    });
+
+    const availableMembers = availableMembersData.map(member => ({
+        id: member.User.id,
+        name: member.User.name,
+        email: member.User.email,
+        accessLevel: member.accessLevel,
+        joinedAt: member.createdAt
+    }));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { members: availableMembers },
+            "Available members fetched successfully"
+        )
+    );
 });

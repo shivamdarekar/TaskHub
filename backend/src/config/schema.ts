@@ -87,6 +87,15 @@ export const updateProjectSchema = z.object({
         .nullable(),
 });
 
+export const addProjectMembersSchema = z.object({
+    memberIds: z.array(z.string().uuid("Invalid user ID format"))
+        .min(1, "At least one member ID is required"),
+});
+
+export const removeProjectMemberSchema = z.object({
+    userId: z.string().uuid("Invalid user ID format"),
+});
+
 // Task Schemas (can be extended for task operations)
 export const createTaskSchema = z.object({
     title: z.string()
