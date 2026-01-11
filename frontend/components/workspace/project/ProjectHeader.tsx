@@ -1,13 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Settings, Edit, FileText } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Plus, Settings, Edit, FileText, Users, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/redux/hooks";
 import { fetchProjectBasicInfo, fetchRecentProjectActivities } from "@/redux/slices/projectSlice";
 import CreateTaskDialog from "@/components/workspace/task/CreateTaskDialog";
 import EditProjectDialog from "@/components/workspace/project/EditProjectDialog";
+import DeleteProjectDialog from "@/components/workspace/project/DeleteProjectDialog";
+import { MemberAvatars, MemberManagementDialog, AddMembersModal } from "@/components/workspace/project/members";
 
 interface ProjectHeaderProps {
   project: {
@@ -38,6 +40,9 @@ export default function ProjectHeader({
   const dispatch = useAppDispatch();
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [manageMembersOpen, setManageMembersOpen] = useState(false);
+  const [addMembersOpen, setAddMembersOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", path: "" },
@@ -82,23 +87,11 @@ export default function ProjectHeader({
           <div>
             <h2 className="text-xl font-bold text-gray-900">{project.name}</h2>
             <div className="flex items-center gap-4 mt-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Team Members</span>
-                <div className="flex -space-x-2">
-                  {members.slice(0, 5).map((member) => (
-                    <Avatar key={member.userId} className="h-6 w-6 border-2 border-white">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-xs">
-                        {member.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {members.length > 5 && (
-                    <div className="h-6 w-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center">
-                      <span className="text-xs text-gray-600">+{members.length - 5}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <MemberAvatars 
+                members={members}
+                onAddMembers={() => setAddMembersOpen(true)}
+                maxDisplay={5}
+              />
             </div>
           </div>
         </div>
@@ -123,6 +116,10 @@ export default function ProjectHeader({
               <div className="px-2 py-1.5 text-sm font-medium text-gray-900">
                 Actions
               </div>
+              <DropdownMenuItem onClick={() => setManageMembersOpen(true)}>
+                <Users className="h-4 w-4 mr-2" />
+                Manage Members
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setEditProjectOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Project
@@ -130,6 +127,14 @@ export default function ProjectHeader({
               <DropdownMenuItem onClick={handleDocumentationClick}>
                 <FileText className="h-4 w-4 mr-2" />
                 Documentation
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Project
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -168,6 +173,25 @@ export default function ProjectHeader({
           dispatch(fetchProjectBasicInfo(project.id));
           dispatch(fetchRecentProjectActivities({ projectId: project.id }));
         }}
+      />
+
+      <MemberManagementDialog
+        projectId={project.id}
+        open={manageMembersOpen}
+        onOpenChange={setManageMembersOpen}
+      />
+
+      <AddMembersModal
+        projectId={project.id}
+        open={addMembersOpen}
+        onOpenChange={setAddMembersOpen}
+      />
+
+      <DeleteProjectDialog
+        project={project}
+        workspaceId={workspaceId}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
       />
     </div>
   );
