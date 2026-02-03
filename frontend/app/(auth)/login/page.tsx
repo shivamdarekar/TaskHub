@@ -124,8 +124,7 @@ export default function LoginPage() {
   if (!isMountedRef.current) return;
   setSubmitting(true);
   try {
-    const result = await dispatch(loginUser(formData)).unwrap();
-    const payload = result as LoginResponse;
+    const payload = await dispatch(loginUser(formData)).unwrap() as LoginResponse;
     if (!isMountedRef.current) return;
 
     if (payload && payload.requiresTwoFA) {
@@ -154,7 +153,7 @@ export default function LoginPage() {
     setTwoFaSubmitting(true);
 
     try {
-      const result = await dispatch(verify2FA(twoFAData)).unwrap();
+      await dispatch(verify2FA(twoFAData)).unwrap();
       if (!isMountedRef.current) return;
       
       setRequires2FA(false);

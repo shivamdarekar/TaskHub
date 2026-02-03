@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, XCircle, Loader2, LayoutGrid, Mail } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function VerifyEmailPage() {
@@ -38,7 +38,7 @@ export default function VerifyEmailPage() {
       try {
         data = await response.json();
         console.log("Response data:", data);
-      } catch (e) {
+      } catch {
         console.log("Response was not JSON");
       }
       

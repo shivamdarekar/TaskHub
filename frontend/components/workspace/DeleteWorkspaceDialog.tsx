@@ -34,7 +34,7 @@ export default function DeleteWorkspaceDialog({
             Delete Workspace
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
-            Are you sure you want to delete <strong>"{workspaceName}"</strong>?
+            Are you sure you want to delete <strong>&quot;{workspaceName}&quot;</strong>?
             <br /><br />
             <span className="text-sm text-red-600 font-medium">
               This action cannot be undone. All projects, tasks, and data in this workspace will be permanently deleted.

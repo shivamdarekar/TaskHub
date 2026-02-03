@@ -121,6 +121,7 @@ export const getTaskById = asyncHandler(async (req: Request, res: Response) => {
     const task = req.task; // Get from middleware
 
     if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!taskId) throw new ApiError(400, "Task ID is required");
     if (!task) throw new ApiError(500, "Task data not found in request");
 
     const fullTask = await prisma.task.findUnique({
@@ -348,6 +349,7 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
     const task = req.task; // Get from middleware
 
     if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!taskId) throw new ApiError(400, "Task ID is required");
     if (!task) throw new ApiError(500, "Task data not found in request");
 
     const taskData = await prisma.task.findUnique({
@@ -435,6 +437,7 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
     const task = req.task; // Get from middleware
 
     if (!userId) throw new ApiError(400, "Not authorized");
+    if (!taskId) throw new ApiError(400, "Task ID is required");
     if (!task) throw new ApiError(500, "Task data not found in request");
 
     if (!Object.values(TaskStatus).includes(toStatus)) {

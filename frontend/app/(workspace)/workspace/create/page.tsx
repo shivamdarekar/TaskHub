@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createWorkspace } from "@/redux/slices/workspaceSlice";
-import { Loader2, LayoutGrid } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import AuthNavbar from "@/components/AuthNavbar";
 
 interface CreateWorkspacePayload {

@@ -311,6 +311,7 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
     const project = req.project; // Get from middleware
 
     if (!userId) throw new ApiError(400, "Not Authorized");
+    if (!projectId) throw new ApiError(400, "Project ID is required");
     if (!project) throw new ApiError(500, "Project data not found in request");
 
     if (!name && description === undefined) {
@@ -379,6 +380,7 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
     const project = req.project; // Get from middleware
 
     if (!userId) throw new ApiError(400, "Not authorized");
+    if (!projectId) throw new ApiError(400, "Project ID is required");
     if (!project) throw new ApiError(500, "Project data not found in request");
 
     const deleteProject = await prisma.project.delete({
@@ -534,6 +536,7 @@ export const addProjectMembers = asyncHandler(async (req: Request, res: Response
     const project = req.project; // Get from middleware
 
     if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!projectId) throw new ApiError(400, "Project ID is required");
     if (!project) throw new ApiError(500, "Project data not found in request");
 
     // Get workspace members for the provided user IDs
@@ -616,6 +619,8 @@ export const removeProjectMember = asyncHandler(async (req: Request, res: Respon
     if (!memberUserId) throw new ApiError(400, "Member user ID is required");
     if (!project) throw new ApiError(500, "Project data not found in request");
 
+    if (!projectId) throw new ApiError(400, "ProjectId is required");
+
     // Prevent removing yourself
     if (memberUserId === userId) {
         throw new ApiError(400, "You cannot remove yourself from the project");
@@ -693,6 +698,7 @@ export const getAvailableMembers = asyncHandler(async (req: Request, res: Respon
     const project = req.project; // Get from middleware
 
     if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!projectId) throw new ApiError(400, "Project ID is required");
     if (!project) throw new ApiError(500, "Project data not found in request");
 
     // Get workspace members who don't have access to this project

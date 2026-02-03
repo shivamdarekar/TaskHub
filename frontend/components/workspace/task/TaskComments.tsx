@@ -42,7 +42,7 @@ export default function TaskComments({ projectId, taskId }: TaskCommentsProps) {
       await dispatch(addComment({ projectId, taskId, content: newComment.trim() })).unwrap();
       setNewComment("");
       toast.success("Comment added successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to add comment");
     } finally {
       setIsSubmittingComment(false);
@@ -62,7 +62,7 @@ export default function TaskComments({ projectId, taskId }: TaskCommentsProps) {
       setEditingCommentId(null);
       setEditingCommentText("");
       toast.success("Comment updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update comment");
     }
   };
@@ -71,7 +71,7 @@ export default function TaskComments({ projectId, taskId }: TaskCommentsProps) {
     try {
       await dispatch(deleteComment(commentId)).unwrap();
       toast.success("Comment deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete comment");
     }
   };

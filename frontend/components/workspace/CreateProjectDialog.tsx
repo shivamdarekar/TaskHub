@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, FolderKanban } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CreateProjectDialogProps {
@@ -64,7 +64,7 @@ export default function CreateProjectDialog({
         setMemberError(null);
       }
     }
-  }, [members, user]);
+  }, [members, user, selectedMembers]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

@@ -35,8 +35,9 @@ export default function InviteMembersSection({
         createWorkspaceInvite({ workspaceId, email })
       ).unwrap();
       toast.success(`Invitation sent to ${email}`);
-    } catch (err: any) {
-      toast.error(err || "Failed to send invitation");
+    } catch (err: unknown) {
+      const errorMessage = typeof err === 'string' ? err : String(err);
+      toast.error(errorMessage || "Failed to send invitation");
       throw err;
     }
   };
@@ -45,8 +46,9 @@ export default function InviteMembersSection({
     try {
       await dispatch(createWorkspaceInvite({ workspaceId })).unwrap();
       toast.success("Invite link generated");
-    } catch (err: any) {
-      toast.error(err || "Failed to generate invite link");
+    } catch (err: unknown) {
+      const errorMessage = typeof err === 'string' ? err : String(err);
+      toast.error(errorMessage || "Failed to generate invite link");
     }
   };
 
@@ -54,8 +56,9 @@ export default function InviteMembersSection({
     try {
       await dispatch(resetInviteLink(workspaceId)).unwrap();
       toast.success("Invite link reset successfully");
-    } catch (err: any) {
-      toast.error(err || "Failed to reset invite link");
+    } catch (err: unknown) {
+      const errorMessage = typeof err === 'string' ? err : String(err);
+      toast.error(errorMessage || "Failed to reset invite link");
     }
   };
 

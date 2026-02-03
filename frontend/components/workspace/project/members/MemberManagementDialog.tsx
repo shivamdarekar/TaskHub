@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -23,7 +22,7 @@ export function MemberManagementDialog({ projectId, open, onOpenChange }: Member
 
   const isOwner = currentWorkspace?.ownerId === user?.id;
 
-  const handleRemoveMember = async (workspaceMemberId: string, member: any) => {
+  const handleRemoveMember = async (workspaceMemberId: string, member: { userId: string; name: string }) => {
     // Check if owner is trying to remove themselves
     if (member.userId === currentWorkspace?.ownerId) {
       toast.error("Owner cannot remove themselves from the project");
@@ -126,7 +125,7 @@ export function MemberManagementDialog({ projectId, open, onOpenChange }: Member
                       variant="ghost" 
                       size="sm"
                       className="h-8 w-8 p-0"
-                      disabled={removingMember === member.workspaceMemberId}
+                      disabled={!!removingMember}
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
@@ -135,7 +134,7 @@ export function MemberManagementDialog({ projectId, open, onOpenChange }: Member
                     <DropdownMenuItem 
                       onClick={() => handleRemoveMember(member.workspaceMemberId, member)}
                       className="text-red-600 focus:text-red-600"
-                      disabled={removingMember === member.workspaceMemberId}
+                      disabled={!!removingMember}
                     >
                       <UserMinus className="h-4 w-4 mr-2" />
                       Remove from Project

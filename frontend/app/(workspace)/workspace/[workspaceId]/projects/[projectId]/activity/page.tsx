@@ -213,7 +213,7 @@ export default function ActivityPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredActivities.map((activity, index) => {
+            {filteredActivities.map((activity) => {
               const badge = getActivityBadge(activity.type);
               return (
                 <Card key={activity.id} className="p-4 hover:shadow-md transition-shadow">

@@ -10,8 +10,8 @@ import { BlockFormatToolbarPlugin } from "@/components/editor/plugins/toolbar/bl
 import { Separator } from "@/components/ui/separator"
 
 export function Plugins() {
-  const [floatingAnchorElem, setFloatingAnchorElem] =
-    useState<HTMLDivElement | null>(null)
+  const [, setFloatingAnchorElem] =
+    useState<HTMLDivElement | null>(null);
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {

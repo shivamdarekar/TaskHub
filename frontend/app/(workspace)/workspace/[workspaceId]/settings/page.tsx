@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, Trash2 } from "lucide-react";
 import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
 import InviteMembersSection from "@/components/workspace/invite/InviteMembersSection";
@@ -74,8 +73,9 @@ export default function WorkspaceSettingsPage() {
         })
       ).unwrap();
       toast.success("Workspace updated successfully");
-    } catch (err: any) {
-      toast.error(err || "Failed to update workspace");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      toast.error(errorMessage || "Failed to update workspace");
     }
   };
 
@@ -92,8 +92,9 @@ export default function WorkspaceSettingsPage() {
       } else {
         router.push("/workspace/create");
       }
-    } catch (error: any) {
-      toast.error(error || "Failed to delete workspace");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(errorMessage || "Failed to delete workspace");
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

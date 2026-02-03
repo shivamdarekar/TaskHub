@@ -6,7 +6,7 @@ import { fetchProjectDocumentation, saveProjectDocumentation, setProjectDocument
 import { Editor } from "@/components/blocks/editor-00/editor";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { EditorState, SerializedEditorState } from "lexical";
+import { SerializedEditorState } from "lexical";
 
 interface ProjectDocumentationProps {
   project: {
@@ -16,7 +16,7 @@ interface ProjectDocumentationProps {
   workspaceId: string;
 }
 
-export default function ProjectDocumentation({ project, workspaceId }: ProjectDocumentationProps) {
+export default function ProjectDocumentation({ project }: ProjectDocumentationProps) {
   const dispatch = useAppDispatch();
   const { loading: documentationLoading, projectDocumentations } = useAppSelector((state) => state.documentation);
   
@@ -62,7 +62,7 @@ export default function ProjectDocumentation({ project, workspaceId }: ProjectDo
     }
   }, [projectDocumentations, project.id, isInitialized]);
 
-  const handleEditorChange = (state: EditorState) => {
+  const handleEditorChange = () => {
     setHasChanges(true);
   };
 

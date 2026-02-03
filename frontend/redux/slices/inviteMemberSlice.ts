@@ -46,7 +46,7 @@ export const createWorkspaceInvite = createAsyncThunk(
             const response = await axiosInstance.post(`/api/v1/invite/${workspaceId}/create`, { email });
             return response.data.data;
         } catch (error) {
-            return rejectWithValue(handleAxiosError(error));
+            return rejectWithValue(handleAxiosError(error, "Failed to create workspace invite"));
         }
     }
 );
@@ -59,7 +59,7 @@ export const getInviteDetails = createAsyncThunk(
             const response = await axiosInstance.get(`/api/v1/invite/${workspaceId}/join/${inviteToken}`);
             return response.data.data;
         } catch (error) {
-            return rejectWithValue(handleAxiosError(error));
+            return rejectWithValue(handleAxiosError(error, "Failed to get invite details"));
         }
     }
 );
@@ -72,7 +72,7 @@ export const joinWorkspaceViaInvite = createAsyncThunk(
             const response = await axiosInstance.post(`/api/v1/invite/${workspaceId}/join/${inviteToken}`);
             return response.data.data;
         } catch (error) {
-            return rejectWithValue(handleAxiosError(error));
+            return rejectWithValue(handleAxiosError(error, "Failed to join workspace"));
         }
     }
 );
@@ -85,7 +85,7 @@ export const resetInviteLink = createAsyncThunk(
             const response = await axiosInstance.post(`/api/v1/invite/${workspaceId}/reset`);
             return response.data.data;
         } catch (error) {
-            return rejectWithValue(handleAxiosError(error));
+            return rejectWithValue(handleAxiosError(error, "Failed to reset invite link"));
         }
     }
 );

@@ -71,9 +71,9 @@ export default function JoinWorkspacePage() {
       // Refresh workspaces list and redirect
       await dispatch(fetchUserWorkspaces()).unwrap();
       router.push(`/workspace/${workspaceId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Better error messages
-      const errorMessage = err?.toLowerCase();
+      const errorMessage = typeof err === 'string' ? err.toLowerCase() : String(err).toLowerCase();
       
       if (errorMessage?.includes('already used')) {
         toast.error("Invite Link Already Used", {
@@ -89,7 +89,7 @@ export default function JoinWorkspacePage() {
         });
       } else {
         toast.error("Failed to Join Workspace", {
-          description: err || "An unexpected error occurred. Please try again."
+          description: typeof err === 'string' ? err : "An unexpected error occurred. Please try again."
         });
       }
     }
@@ -258,7 +258,7 @@ export default function JoinWorkspacePage() {
             {!isAuthenticated && (
               <div className="text-center">
                 <p className="text-sm text-gray-600">
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                   <Link
                     href={`/register?redirect=${encodeURIComponent(`/workspace-invite/${workspaceId}/join/${inviteToken}`)}`}
                     className="text-blue-600 hover:text-blue-700 font-semibold"

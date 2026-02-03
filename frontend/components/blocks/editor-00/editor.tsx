@@ -23,7 +23,6 @@ const editorConfig: InitialConfigType = {
 }
 
 export function Editor({
-  editorState,
   editorSerializedState,
   onChange,
   onSerializedChange,

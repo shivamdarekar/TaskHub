@@ -4,8 +4,17 @@ import { useAppSelector } from "@/redux/hooks";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
-import { ProjectMemberDetails } from "@/redux/slices/projectSlice";
 import { toast } from "sonner";
+
+interface ProjectMemberDetails {
+  workspaceMemberId: string;
+  userId: string;
+  name: string;
+  email: string;
+  lastLogin: string | null;
+  accessLevel: string;
+  joinedAt: string;
+}
 
 interface MemberAvatarsProps {
   members: ProjectMemberDetails[];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   fetchProjectOverview,
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CalendarIcon, X, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { format, addDays, isBefore } from "date-fns";
 import {
   createTask,
@@ -82,7 +82,7 @@ export default function CreateTaskDialog({
     ...getDefaultDates(),
   });
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       title: "",
       description: "",
@@ -92,11 +92,11 @@ export default function CreateTaskDialog({
       ...getDefaultDates(),
     });
     dispatch(clearTaskError());
-  };
+  }, [dispatch]);
 
   useEffect(() => {
     if (!open) resetForm();
-  }, [open]);
+  }, [open, resetForm]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -157,17 +157,9 @@ export default function CreateTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              Create New Task
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-            >
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-semibold">
+            Create New Task
+          </DialogTitle>
         </DialogHeader>
 
         {error && (

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchProjectBasicInfo, fetchProjectMembers } from "@/redux/slices/projectSlice";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle } from "lucide-react";
 
@@ -76,7 +75,7 @@ export default function ProjectLayout({
             
             <div className="p-6 text-center space-y-4">
               <p className="text-gray-600 leading-relaxed">
-                You don't have access to this project. Please contact the workspace owner to grant you access.
+                You don&apos;t have access to this project. Please contact the workspace owner to grant you access.
               </p>
               
               <Button
@@ -116,7 +115,7 @@ export default function ProjectLayout({
           
           <div className="p-6 text-center space-y-4">
             <p className="text-gray-600 leading-relaxed">
-              The project you're looking for doesn't exist or has been deleted.
+              The project you&apos;re looking for doesn&apos;t exist or has been deleted.
             </p>
             
             <Button

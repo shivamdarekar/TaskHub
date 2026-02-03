@@ -126,8 +126,6 @@ export default function KanbanBoard({ tasks, onTaskMove, loading }: KanbanBoardP
     }
   };
 
-  const allTaskIds = Object.values(tasks).flat().map(task => task.id);
-
   return (
     <DndContext
       sensors={sensors}

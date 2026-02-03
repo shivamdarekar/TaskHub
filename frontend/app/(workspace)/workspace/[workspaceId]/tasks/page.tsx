@@ -3,17 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { getUserTasks, TaskStatus, TaskPriority } from "@/redux/slices/taskSlice";
+import { getUserTasks, TaskStatus, TaskPriority, Task } from "@/redux/slices/taskSlice";
 
 import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, Filter, Calendar, User, FolderKanban, AlertCircle, MoreHorizontal, Edit, Copy, Trash2 } from "lucide-react";
+import { Search, Calendar, User, FolderKanban, AlertCircle, MoreHorizontal, Edit, Copy, Trash2 } from "lucide-react";
 import EditTaskDialog from "@/components/workspace/task/EditTaskDialog";
 import DeleteTaskDialog from "@/components/workspace/task/DeleteTaskDialog";
 
@@ -25,8 +25,8 @@ export default function MyTasksPage() {
 
   const { tasks, tasksLoading, pagination, error } = useAppSelector((state) => state.task);
 
-  const [editTask, setEditTask] = useState<any>(null);
-  const [deleteTask, setDeleteTask] = useState<any>(null);
+  const [editTask, setEditTask] = useState<Task | null>(null);
+  const [deleteTask, setDeleteTask] = useState<{ id: string; title: string; projectId: string } | null>(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -222,7 +222,7 @@ export default function MyTasksPage() {
                 <User className="h-12 w-12 mx-auto" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
-              <p className="text-gray-600">You don't have any tasks assigned to you yet.</p>
+              <p className="text-gray-600">You don&apos;t have any tasks assigned to you yet.</p>
             </CardContent>
           </Card>
         ) : (
@@ -291,7 +291,7 @@ export default function MyTasksPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-red-600"
-                        onClick={() => setDeleteTask({ id: task.id, title: task.title, projectId: task.project?.id })}
+                        onClick={() => setDeleteTask({ id: task.id, title: task.title, projectId: task.project?.id || '' })}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete

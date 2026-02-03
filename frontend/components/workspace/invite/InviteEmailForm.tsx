@@ -39,7 +39,7 @@ export default function InviteEmailForm({
       setEmail("");
       setEmailSent(true);
       setTimeout(() => setEmailSent(false), 3000);
-    } catch (error) {
+    } catch {
       // Error handled by parent
     }
   };

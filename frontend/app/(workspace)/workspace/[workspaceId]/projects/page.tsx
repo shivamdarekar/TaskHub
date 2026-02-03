@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, FolderKanban, Calendar, AlertCircle } from "lucide-react";
 import { fetchWorkspaceProjects } from "@/redux/slices/projectSlice";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import WorkspaceNavbar from "@/components/workspace/WorkspaceNavbar";
 import CreateProjectDialog from "@/components/workspace/CreateProjectDialog";
 

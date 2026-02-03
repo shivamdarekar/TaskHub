@@ -23,7 +23,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     const { workspaceId } = useParams<{ workspaceId: string }>();
 
     const { isAuthenticated, authLoading } = useAppSelector((state) => state.auth);
-    const { workspaces, loading: workspacesLoading, currentWorkspace } =
+    const { workspaces, loading: workspacesLoading } =
         useAppSelector((state) => state.workspace);
 
     const [checkingWorkspaces, setCheckingWorkspaces] = useState(true);
@@ -59,6 +59,8 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         isAuthenticated,
         workspaces.length,
         workspacesLoading,
+        dispatch,
+        router
     ]);
 
     //Fetch workspace details when user switches workspace Prevents double-fetch using hasFetchedWorkspace
@@ -85,6 +87,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         isAuthenticated,
         checkingWorkspaces,
         hasFetchedWorkspace,
+        dispatch
     ]);
 
     if (authLoading || checkingWorkspaces || !isAuthenticated) {

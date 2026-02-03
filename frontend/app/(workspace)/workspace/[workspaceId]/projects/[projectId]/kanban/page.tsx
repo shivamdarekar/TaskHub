@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { getKanbanTasks, moveTaskKanban } from "@/redux/slices/taskSlice";
+import { getKanbanTasks, moveTaskKanban, TaskStatus } from "@/redux/slices/taskSlice";
 import KanbanBoard from "@/components/workspace/kanban/KanbanBoard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,7 +29,7 @@ export default function KanbanPage() {
       await dispatch(moveTaskKanban({
         projectId,
         taskId,
-        toStatus: toStatus as any,
+        toStatus: toStatus as TaskStatus,
         toPosition
       })).unwrap();
       
@@ -74,7 +74,7 @@ export default function KanbanPage() {
         </div>
         
         <div className="flex items-center gap-4">
-          <Select value={view} onValueChange={(value: any) => setView(value)}>
+          <Select value={view} onValueChange={(value: "all" | "assigned" | "created") => setView(value)}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>

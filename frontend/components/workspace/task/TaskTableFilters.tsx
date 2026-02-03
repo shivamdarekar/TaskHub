@@ -13,7 +13,7 @@ interface TaskTableFiltersProps {
     priority?: TaskPriority;
     assigneeId?: string;
   };
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: { search: string; status?: TaskStatus; priority?: TaskPriority; assigneeId?: string }) => void;
   members: Array<{
     workspaceMemberId: string;
     userId: string;
@@ -82,7 +82,7 @@ export default function TaskTableFilters({ filters, onFilterChange, members, onC
             {/* Status Filter */}
             <Select
               value={filters.status || "all"}
-              onValueChange={(value) => onFilterChange({ ...filters, status: value === "all" ? undefined : value })}
+              onValueChange={(value) => onFilterChange({ ...filters, status: value === "all" ? undefined : value as TaskStatus })}
             >
               <SelectTrigger className="w-full sm:w-32 md:w-40 text-sm">
                 <SelectValue placeholder="Status" />
@@ -100,7 +100,7 @@ export default function TaskTableFilters({ filters, onFilterChange, members, onC
             {/* Priority Filter */}
             <Select
               value={filters.priority || "all"}
-              onValueChange={(value) => onFilterChange({ ...filters, priority: value === "all" ? undefined : value })}
+              onValueChange={(value) => onFilterChange({ ...filters, priority: value === "all" ? undefined : value as TaskPriority })}
             >
               <SelectTrigger className="w-full sm:w-32 md:w-40 text-sm">
                 <SelectValue placeholder="Priority" />
@@ -118,7 +118,7 @@ export default function TaskTableFilters({ filters, onFilterChange, members, onC
             {/* Assignee Filter */}
             <Select
               value={filters.assigneeId || "all"}
-              onValueChange={(value) => onFilterChange({ assigneeId: value === "all" ? undefined : value })}
+              onValueChange={(value) => onFilterChange({ ...filters, assigneeId: value === "all" ? undefined : value })}
             >
               <SelectTrigger className="w-full sm:w-36 md:w-48 text-sm">
                 <SelectValue placeholder="Assigned" />

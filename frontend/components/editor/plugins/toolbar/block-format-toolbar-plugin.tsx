@@ -41,7 +41,7 @@ const BLOCK_TYPES = [
 
 export function BlockFormatToolbarPlugin() {
   const { activeEditor, blockType, setBlockType } = useToolbarContext()
-  const [isListNode, setIsListNode] = useState(false)
+  const [, setIsListNode] = useState(false)
 
   const $updateToolbar = useCallback((selection: BaseSelection) => {
     if ($isRangeSelection(selection)) {
@@ -118,7 +118,7 @@ export function BlockFormatToolbarPlugin() {
                     if (value === "paragraph") {
                       $setBlocksType(selection, () => $createParagraphNode())
                     } else {
-                      $setBlocksType(selection, () => $createHeadingNode(value as any))
+                      $setBlocksType(selection, () => $createHeadingNode(value as "h1" | "h2" | "h3"))
                     }
                   }
                 })

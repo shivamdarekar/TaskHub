@@ -7,7 +7,7 @@ import { Editor } from "@/components/blocks/editor-00/editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { EditorState, SerializedEditorState } from "lexical";
+import { SerializedEditorState } from "lexical";
 
 interface TaskDocumentationProps {
   projectId: string;
@@ -59,7 +59,7 @@ export default function TaskDocumentation({ projectId, taskId }: TaskDocumentati
     }
   }, [documentation, isInitialized, taskId, taskDocumentations]);
 
-  const handleEditorChange = (state: EditorState) => {
+  const handleEditorChange = () => {
     setHasChanges(true);
   };
 
@@ -79,7 +79,7 @@ export default function TaskDocumentation({ projectId, taskId }: TaskDocumentati
     setIsSavingDoc(true);
     try {
       console.log('Saving documentation with:', { projectId, taskId, documentation: JSON.stringify(editorState) });
-      const result = await dispatch(saveDocumentation({ 
+      await dispatch(saveDocumentation({ 
         projectId, 
         taskId, 
         documentation: JSON.stringify(editorState) 

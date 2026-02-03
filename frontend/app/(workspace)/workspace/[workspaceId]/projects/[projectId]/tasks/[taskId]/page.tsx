@@ -91,7 +91,7 @@ export default function TaskDetailPage() {
       <div className="p-6 max-w-7xl mx-auto">
         <div className="text-center py-12">
           <h2 className="text-2xl font-semibold text-gray-900">Task not found</h2>
-          <p className="text-gray-600 mt-2">The task you're looking for doesn't exist or you don't have access to it.</p>
+          <p className="text-gray-600 mt-2">The task you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
           <Button 
             onClick={() => router.back()} 
             className="mt-4"

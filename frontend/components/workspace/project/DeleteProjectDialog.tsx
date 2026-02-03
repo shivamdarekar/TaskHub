@@ -67,7 +67,7 @@ export default function DeleteProjectDialog({
             <li>Member access to this project</li>
           </ul>
           <p className="font-medium text-red-600 mt-3">
-            Are you sure you want to delete "{project.name}"?
+            Are you sure you want to delete &quot;{project.name}&quot;?
           </p>
         </div>
         <AlertDialogFooter>

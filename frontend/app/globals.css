@@ -119,6 +119,36 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Text selection styling */
+  ::selection {
+    background-color: rgb(59 130 246 / 0.2); /* Blue selection with transparency */
+    color: inherit;
+  }
+  
+  ::-moz-selection {
+    background-color: rgb(59 130 246 / 0.2); /* Firefox support */
+    color: inherit;
+  }
+  
+  /* Input and textarea selection styling */
+  input::selection,
+  textarea::selection,
+  input[type="text"]::selection,
+  input[type="email"]::selection,
+  input[type="password"]::selection {
+    background-color: rgb(59 130 246 / 0.3) !important;
+    color: inherit !important;
+  }
+  
+  input::-moz-selection,
+  textarea::-moz-selection,
+  input[type="text"]::-moz-selection,
+  input[type="email"]::-moz-selection,
+  input[type="password"]::-moz-selection {
+    background-color: rgb(59 130 246 / 0.3) !important;
+    color: inherit !important;
+  }
 }
 
 @layer utilities {
