@@ -494,6 +494,284 @@ const deleteWorkspace = asyncHandler(async (req: Request, res: Response) => {
     )
 });
 
+// Remove member from workspace
+const removeMember = asyncHandler(async (req: Request, res: Response) => {
+    const { workspaceId, memberId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!workspaceId) throw new ApiError(400, "Workspace ID is required");
+    if (!memberId) throw new ApiError(400, "Member ID is required");
+
+    // Find the member record
+    const member = await prisma.workspaceMembers.findUnique({
+        where: { id: memberId },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            },
+            workspace: {
+                select: {
+                    id: true,
+                    ownerId: true
+                }
+            }
+        }
+    });
+
+    if (!member) throw new ApiError(404, "Member not found");
+
+    // Verify member belongs to this workspace
+    if (member.workspaceId !== workspaceId) {
+        throw new ApiError(400, "Member does not belong to this workspace");
+    }
+
+    // Prevent owner from being removed
+    if (member.accessLevel === "OWNER") {
+        throw new ApiError(403, "Cannot remove workspace owner");
+    }
+
+    // Prevent owner from removing themselves
+    if (member.userId === userId) {
+        throw new ApiError(403, "Cannot remove yourself from workspace");
+    }
+
+    // Delete member (cascades to ProjectAccess)
+    await prisma.workspaceMembers.delete({
+        where: { id: memberId }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200, 
+            { removedMember: { id: member.User.id, name: member.User.name, email: member.User.email } },
+            "Member removed successfully"
+        )
+    );
+});
+
+
+// Get projects for a specific member
+const getMemberProjects = asyncHandler(async (req: Request, res: Response) => {
+    const { workspaceId, memberId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!workspaceId) throw new ApiError(400, "Workspace ID is required");
+    if (!memberId) throw new ApiError(400, "Member ID is required");
+
+    // Verify member exists and belongs to workspace
+    const member = await prisma.workspaceMembers.findUnique({
+        where: { id: memberId },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
+        }
+    });
+
+    if (!member) throw new ApiError(404, "Member not found");
+    if (member.workspaceId !== workspaceId) {
+        throw new ApiError(400, "Member does not belong to this workspace");
+    }
+
+    // Check if member is owner (owners have access to all projects)
+    if (member.accessLevel === "OWNER") {
+        const allProjects = await prisma.project.findMany({
+            where: { workspaceId },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        tasks: true
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    member: {
+                        id: member.User.id,
+                        name: member.User.name,
+                        email: member.User.email,
+                        accessLevel: member.accessLevel
+                    },
+                    projects: allProjects.map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        description: p.description,
+                        createdAt: p.createdAt,
+                        taskCount: p._count.tasks,
+                        accessType: "owner"
+                    })),
+                    totalProjects: allProjects.length
+                },
+                "Member projects fetched successfully"
+            )
+        );
+    }
+
+    // For regular members, get projects they have explicit access to
+    const projectAccess = await prisma.projectAccess.findMany({
+        where: {
+            workspaceMemberId: memberId,
+            hasAccess: true
+        },
+        include: {
+            project: {
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    createdAt: true,
+                    workspaceId: true,
+                    _count: {
+                        select: {
+                            tasks: true
+                        }
+                    }
+                }
+            }
+        },
+        orderBy: {
+            project: {
+                createdAt: "desc"
+            }
+        }
+    });
+
+    // Filter to only projects in this workspace
+    const projects = projectAccess
+        .filter(pa => pa.project.workspaceId === workspaceId)
+        .map(pa => ({
+            id: pa.project.id,
+            name: pa.project.name,
+            description: pa.project.description,
+            createdAt: pa.project.createdAt,
+            taskCount: pa.project._count.tasks,
+            accessType: "member"
+        }));
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                member: {
+                    id: member.User.id,
+                    name: member.User.name,
+                    email: member.User.email,
+                    accessLevel: member.accessLevel
+                },
+                projects,
+                totalProjects: projects.length
+            },
+            "Member projects fetched successfully"
+        )
+    );
+});
+
+
+// Update member access level
+const updateMemberAccess = asyncHandler(async (req: Request, res: Response) => {
+    const { workspaceId, memberId } = req.params;
+    const { accessLevel } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!workspaceId) throw new ApiError(400, "Workspace ID is required");
+    if (!memberId) throw new ApiError(400, "Member ID is required");
+    if (!accessLevel) throw new ApiError(400, "Access level is required");
+
+    // Validate access level
+    const validAccessLevels = ["OWNER", "MEMBER", "VIEWER"];
+    if (!validAccessLevels.includes(accessLevel)) {
+        throw new ApiError(400, "Invalid access level. Must be OWNER, MEMBER, or VIEWER");
+    }
+
+    // Find the member
+    const member = await prisma.workspaceMembers.findUnique({
+        where: { id: memberId },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            },
+            workspace: {
+                select: {
+                    id: true,
+                    ownerId: true
+                }
+            }
+        }
+    });
+
+    if (!member) throw new ApiError(404, "Member not found");
+    if (member.workspaceId !== workspaceId) {
+        throw new ApiError(400, "Member does not belong to this workspace");
+    }
+
+    // Prevent changing the original owner's access level
+    if (member.workspace.ownerId === member.userId) {
+        throw new ApiError(403, "Cannot change the workspace owner's access level");
+    }
+
+    // Prevent changing your own access level
+    if (member.userId === userId) {
+        throw new ApiError(403, "Cannot change your own access level");
+    }
+
+    // Update access level
+    const updatedMember = await prisma.workspaceMembers.update({
+        where: { id: memberId },
+        data: { accessLevel },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    profilePicture: true
+                }
+            }
+        }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                member: {
+                    id: updatedMember.id,
+                    userId: updatedMember.User.id,
+                    user: updatedMember.User,
+                    accessLevel: updatedMember.accessLevel,
+                    createdAt: updatedMember.createdAt
+                }
+            },
+            "Member access level updated successfully"
+        )
+    );
+});
+
+
 export {
     createWorkSpace,
     getUserWorkspace,
@@ -501,5 +779,8 @@ export {
     getWorkspaceMembers,
     getWorkspaceOverview,
     updateWorkspace,
-    deleteWorkspace
+    deleteWorkspace,
+    removeMember,
+    getMemberProjects,
+    updateMemberAccess
 }
