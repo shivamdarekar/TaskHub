@@ -23,6 +23,9 @@ interface WorkspaceState {
     currentWorkspaceLoading: boolean;
     members: Member[];
     membersLoading: boolean;
+    memberProjects: MemberProject[];
+    memberProjectsLoading: boolean;
+    selectedMember: Member | null;
 }
 
 interface WorkspaceData {
@@ -114,6 +117,30 @@ interface UpdateWorkspaceData {
     description?: string;
 }
 
+interface MemberProject {
+    id: string;
+    name: string;
+    description?: string | null;
+    createdAt: string;
+    taskCount: number;
+    accessType: "owner" | "member";
+}
+
+interface MemberProjectsResponse {
+    member: {
+        id: string;
+        name: string;
+        email: string;
+        accessLevel: string;
+    };
+    projects: MemberProject[];
+    totalProjects: number;
+}
+
+interface UpdateMemberAccessData {
+    accessLevel: "OWNER" | "MEMBER" | "VIEWER";
+}
+
 const initialState: WorkspaceState = {
     workspaces: [],
     loading: false,
@@ -124,6 +151,9 @@ const initialState: WorkspaceState = {
     currentWorkspaceLoading: false,
     members: [],
     membersLoading: false,
+    memberProjects: [],
+    memberProjectsLoading: false,
+    selectedMember: null,
 };
 
 export const createWorkspace = createAsyncThunk(
@@ -226,6 +256,48 @@ export const deleteWorkspace = createAsyncThunk(
     }
 );
 
+export const removeMember = createAsyncThunk(
+    "workspace/removeMember",
+    async ({ workspaceId, memberId }: { workspaceId: string; memberId: string }, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.delete(`/api/v1/workspace/${workspaceId}/members/${memberId}`);
+            return { memberId, removedMember: response.data.data.removedMember };
+        } catch (error: unknown) {
+            return rejectWithValue(
+                handleAxiosError(error, "Failed to remove member")
+            );
+        }
+    }
+);
+
+export const getMemberProjects = createAsyncThunk(
+    "workspace/getMemberProjects",
+    async ({ workspaceId, memberId }: { workspaceId: string; memberId: string }, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.get(`/api/v1/workspace/${workspaceId}/members/${memberId}/projects`);
+            return response.data.data as MemberProjectsResponse;
+        } catch (error: unknown) {
+            return rejectWithValue(
+                handleAxiosError(error, "Failed to fetch member projects")
+            );
+        }
+    }
+);
+
+export const updateMemberAccess = createAsyncThunk(
+    "workspace/updateMemberAccess",
+    async ({ workspaceId, memberId, data }: { workspaceId: string; memberId: string; data: UpdateMemberAccessData }, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.patch(`/api/v1/workspace/${workspaceId}/members/${memberId}/access`, data);
+            return response.data.data.member;
+        } catch (error: unknown) {
+            return rejectWithValue(
+                handleAxiosError(error, "Failed to update member access")
+            );
+        }
+    }
+);
+
 const workspaceSlice = createSlice({
     name: "workspace",
     initialState,
@@ -240,7 +312,13 @@ const workspaceSlice = createSlice({
             state.currentWorkspaceLoading = false;
             state.membersLoading = false;
             state.overviewLoading = false;
+            state.memberProjects = [];
+            state.memberProjectsLoading = false;
+            state.selectedMember = null;
             state.error = null;
+        },
+        setSelectedMember: (state, action) => {
+            state.selectedMember = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -372,11 +450,73 @@ const workspaceSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
+
+            // Remove Member
+            .addCase(removeMember.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(removeMember.fulfilled, (state, action) => {
+                state.loading = false;
+                state.members = state.members.filter(m => m.id !== action.payload.memberId);
+                state.error = null;
+            })
+            .addCase(removeMember.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // Get Member Projects
+            .addCase(getMemberProjects.pending, (state) => {
+                state.memberProjectsLoading = true;
+                state.error = null;
+            })
+            .addCase(getMemberProjects.fulfilled, (state, action) => {
+                state.memberProjectsLoading = false;
+                state.memberProjects = action.payload.projects;
+                if (state.selectedMember) {
+                    state.selectedMember = {
+                        ...state.selectedMember,
+                        user: {
+                            ...state.selectedMember.user,
+                            name: action.payload.member.name,
+                            email: action.payload.member.email
+                        },
+                        accessLevel: action.payload.member.accessLevel
+                    };
+                }
+                state.error = null;
+            })
+            .addCase(getMemberProjects.rejected, (state, action) => {
+                state.memberProjectsLoading = false;
+                state.error = action.payload as string;
+            })
+
+            // Update Member Access
+            .addCase(updateMemberAccess.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateMemberAccess.fulfilled, (state, action) => {
+                state.loading = false;
+                const memberIndex = state.members.findIndex(m => m.id === action.payload.id);
+                if (memberIndex !== -1) {
+                    state.members[memberIndex] = action.payload;
+                }
+                if (state.selectedMember?.id === action.payload.id) {
+                    state.selectedMember = action.payload;
+                }
+                state.error = null;
+            })
+            .addCase(updateMemberAccess.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
             
             // Reset all workspace data on logout
             .addCase(resetAppState, () => initialState);
     },
 });
 
-export const { clearError, clearWorkspaceData } = workspaceSlice.actions;
+export const { clearError, clearWorkspaceData, setSelectedMember } = workspaceSlice.actions;
 export default workspaceSlice.reducer;

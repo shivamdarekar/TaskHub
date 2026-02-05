@@ -74,7 +74,7 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
       label: "Members",
       icon: Users,
       href: `/workspace/${workspaceId}/members`,
-      active: params.section === "members",
+      active: pathname === `/workspace/${workspaceId}/members`,
     },
     {
       label: "Settings",
