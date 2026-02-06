@@ -19,6 +19,9 @@ import {
   Menu,
   X,
   ChevronsUpDown,
+  Crown,
+  CreditCard,
+  ChevronUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -399,35 +402,76 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
                 </div>
 
                 {!isCollapsed && (
-                  <div className="flex-1 text-left overflow-hidden">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user?.name}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user?.email}
-                    </p>
+                  <div className="flex-1 flex items-center justify-between overflow-hidden">
+                    <div className="flex-1 text-left overflow-hidden">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user?.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                    <ChevronUp className="h-4 w-4 text-gray-600 shrink-0" />
                   </div>
                 )}
               </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onClick={() => router.push("/profile")}
-                className="cursor-pointer"
-              >
-                Profile Settings
-              </DropdownMenuItem>
+            <DropdownMenuContent side="top" align="start" className="w-64 p-2">
+              {/* Header with company name and email */}
+              <div className="px-2 py-3 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <span className="text-white text-sm font-semibold">
+                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </span>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {user?.name || "Workspace"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-              <DropdownMenuSeparator />
+              {/* Menu Items */}
+              <div className="py-1">
+                <DropdownMenuItem
+                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md"
+                >
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm">Upgrade to Pro</span>
+                </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="cursor-pointer text-red-600"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push(`/workspace/${workspaceId}/profile`)}
+                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md"
+                >
+                  <User className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm">Profile</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => router.push("/billing")}
+                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md"
+                >
+                  <CreditCard className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm">Billing</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-1" />
+
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="text-sm">Log out</span>
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
