@@ -84,8 +84,8 @@ model Project {
   description String?
   workspaceId String
   workspace   WorkSpace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy   String
-  creator     User      @relation("ProjectCreator", fields: [createdBy], references: [id])
+  createdBy   String?
+  creator     User?     @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   tasks         Task[]
   activities    Activity[]
@@ -140,8 +140,8 @@ model Task {
   priority    TaskPriority @default(LOW)
   startDate   DateTime?
   dueDate     DateTime?
-  createdBy   String
-  creator     User         @relation("TaskCreator", fields: [createdBy], references: [id])
+  createdBy   String?
+  creator     User?        @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   position  Int
   projectId String
@@ -225,13 +225,13 @@ model WorkspaceInvite {
   workspaceId  String
   inviteToken  String    @unique
   email        String?
-  invitedBy    String
+  invitedBy    String?
   expiresAt    DateTime
   usedAt       DateTime?
   createdAt    DateTime  @default(now())
 
   workspace  WorkSpace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  inviter    User       @relation(fields: [invitedBy], references: [id])
+  inviter    User?      @relation(fields: [invitedBy], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([inviteToken])
