@@ -298,6 +298,20 @@ export const updateMemberAccess = createAsyncThunk(
     }
 );
 
+export const transferOwnership = createAsyncThunk(
+    "workspace/transferOwnership",
+    async ({ workspaceId, newOwnerId }: { workspaceId: string; newOwnerId: string }, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.patch(`/api/v1/workspace/${workspaceId}/transfer-ownership`, { newOwnerId });
+            return { workspaceId, newOwner: response.data.data.newOwner };
+        } catch (error: unknown) {
+            return rejectWithValue(
+                handleAxiosError(error, "Failed to transfer ownership")
+            );
+        }
+    }
+);
+
 const workspaceSlice = createSlice({
     name: "workspace",
     initialState,
@@ -509,6 +523,24 @@ const workspaceSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateMemberAccess.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // Transfer Ownership
+            .addCase(transferOwnership.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(transferOwnership.fulfilled, (state, action) => {
+                state.loading = false;
+                if (state.currentWorkspace) {
+                    state.currentWorkspace.ownerId = action.payload.newOwner.id;
+                    state.currentWorkspace.owner = action.payload.newOwner;
+                }
+                state.error = null;
+            })
+            .addCase(transferOwnership.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             })

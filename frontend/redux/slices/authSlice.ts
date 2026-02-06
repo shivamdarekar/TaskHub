@@ -39,6 +39,26 @@ interface Verify2FAData {
   otp: string;
 }
 
+interface UpdateProfileData {
+  name: string;
+}
+
+interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+interface Toggle2FAData {
+  password: string;
+}
+
+interface DeleteAccountData {
+  password: string;
+  confirmation: string;
+  forceDelete?: boolean;
+}
+
 //initial state
 const initialState: AuthState = {
   user: null,
@@ -180,6 +200,71 @@ export const resetPassword = createAsyncThunk(
     } catch (error: unknown) {
       return rejectWithValue(handleAxiosError(error, "Password reset failed"));
 
+    }
+  }
+);
+
+// Update profile
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (data: UpdateProfileData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put("/api/v1/users/profile", data);
+      return response.data.data.user;
+    } catch (error: unknown) {
+      return rejectWithValue(handleAxiosError(error, "Profile update failed"));
+    }
+  }
+);
+
+// Change password
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (data: ChangePasswordData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put("/api/v1/users/change-password", data);
+      return response.data.message;
+    } catch (error: unknown) {
+      return rejectWithValue(handleAxiosError(error, "Password change failed"));
+    }
+  }
+);
+
+// Toggle 2FA
+export const toggle2FA = createAsyncThunk(
+  "auth/toggle2FA",
+  async (data: Toggle2FAData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/api/v1/users/toggle-2fa", data);
+      return response.data.data;
+    } catch (error: unknown) {
+      return rejectWithValue(handleAxiosError(error, "2FA toggle failed"));
+    }
+  }
+);
+
+// Get user stats
+export const getUserStats = createAsyncThunk(
+  "auth/getUserStats",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/api/v1/users/stats");
+      return response.data.data.stats;
+    } catch (error: unknown) {
+      return rejectWithValue(handleAxiosError(error, "Failed to fetch user stats"));
+    }
+  }
+);
+
+// Delete account
+export const deleteAccount = createAsyncThunk(
+  "auth/deleteAccount",
+  async (data: DeleteAccountData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.delete("/api/v1/users/account", { data });
+      return response.data.message;
+    } catch (error: unknown) {
+      return rejectWithValue(handleAxiosError(error, "Account deletion failed"));
     }
   }
 );
@@ -332,6 +417,87 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(resetPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Update profile
+    builder
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Change password
+    builder
+      .addCase(changePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Toggle 2FA
+    builder
+      .addCase(toggle2FA.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(toggle2FA.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) {
+          state.user.is2FAenabled = action.payload.is2FAenabled;
+        }
+        state.error = null;
+      })
+      .addCase(toggle2FA.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Get user stats
+    builder
+      .addCase(getUserStats.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getUserStats.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(getUserStats.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Delete account
+    builder
+      .addCase(deleteAccount.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteAccount.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(deleteAccount.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
