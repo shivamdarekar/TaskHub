@@ -771,6 +771,82 @@ const updateMemberAccess = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
+// Transfer workspace ownership
+const transferOwnership = asyncHandler(async (req: Request, res: Response) => {
+    const { workspaceId } = req.params;
+    const { newOwnerId } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) throw new ApiError(401, "Not Authorized");
+    if (!newOwnerId) throw new ApiError(400, "New owner ID is required");
+    if (!workspaceId) throw new ApiError(400, "Workspace ID is required");
+
+    // Verify new owner is a member
+    const newOwnerMember = await prisma.workspaceMembers.findFirst({
+        where: {
+            workspaceId,
+            userId: newOwnerId
+        },
+        include: {
+            User: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
+        }
+    });
+
+    if (!newOwnerMember) {
+        throw new ApiError(400, "New owner must be a workspace member");
+    }
+
+    // Transfer ownership in transaction
+    await prisma.$transaction(async (tx) => {
+        // Update workspace owner
+        await tx.workSpace.update({
+            where: { id: workspaceId },
+            data: { ownerId: newOwnerId }
+        });
+
+        // Update new owner's access level to OWNER
+        await tx.workspaceMembers.update({
+            where: { id: newOwnerMember.id },
+            data: { accessLevel: "OWNER" }
+        });
+
+        // Update old owner's access level to MEMBER
+        const oldOwnerMember = await tx.workspaceMembers.findFirst({
+            where: {
+                workspaceId,
+                userId
+            }
+        });
+
+        if (oldOwnerMember) {
+            await tx.workspaceMembers.update({
+                where: { id: oldOwnerMember.id },
+                data: { accessLevel: "MEMBER" }
+            });
+        }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                newOwner: {
+                    id: newOwnerMember.User.id,
+                    name: newOwnerMember.User.name,
+                    email: newOwnerMember.User.email
+                }
+            },
+            "Ownership transferred successfully"
+        )
+    );
+});
+
 
 export {
     createWorkSpace,
@@ -782,5 +858,6 @@ export {
     deleteWorkspace,
     removeMember,
     getMemberProjects,
-    updateMemberAccess
+    updateMemberAccess,
+    transferOwnership
 }
