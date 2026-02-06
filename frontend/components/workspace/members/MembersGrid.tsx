@@ -37,7 +37,6 @@ export default function MembersGrid({
   members, 
   isOwner, 
   currentUserId,
-  workspaceOwnerId,
   onViewDetails, 
   onRemoveMember,
   onUpdateAccess
