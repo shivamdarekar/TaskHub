@@ -5,6 +5,9 @@ import {
   registerSchema,
   resetPasswordSchema,
   toggle2FASchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  deleteAccountSchema
 } from "../config/schema";
 import {
   registerUser,
@@ -18,7 +21,11 @@ import {
   toggle2FA,
   verify2FA,
   fetchCurrentUser,
-  refreshAccessToken
+  refreshAccessToken,
+  updateProfile,
+  changePassword,
+  getUserStats,
+  deleteAccount
 } from "../controllers/user.controller";
 import { verifyJWT } from "../middleware/auth.middleware";
 
@@ -46,8 +53,16 @@ router.post("/refresh-token", refreshAccessToken);
 //protected route
 router.post("/toggle-2fa", verifyJWT, validate(toggle2FASchema), toggle2FA);
 
+router.put("/profile", verifyJWT, validate(updateProfileSchema), updateProfile);
+
+router.put("/change-password", verifyJWT, validate(changePasswordSchema), changePassword);
+
+router.get("/stats", verifyJWT, getUserStats);
+
 router.post("/logout", verifyJWT, logoutUser);
 
 router.get("/me", verifyJWT, fetchCurrentUser);
+
+router.delete("/account", verifyJWT, validate(deleteAccountSchema), deleteAccount);
 
 export default router;

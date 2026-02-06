@@ -19,14 +19,14 @@ declare global {
       };
       task?: {
         id: string;
-        createdBy: string;
+        createdBy: string | null;
         assigneeId?: string | null;
         projectOwnerId: string;
       };
       project?: {
         id: string;
         workspaceId: string;
-        createdBy: string;
+        createdBy: string | null;
         workspaceOwnerId: string;
       };
     }

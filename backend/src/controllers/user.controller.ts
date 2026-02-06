@@ -42,6 +42,22 @@ interface Toggle2FABody {
   password: string;
 }
 
+interface UpdateProfileBody {
+  name: string;
+}
+
+interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+interface DeleteAccountBody {
+  password: string;
+  confirmation: string;
+  forceDelete?: boolean;
+}
+
 interface Verify2FABody {
   email: string;
   twoFAToken: string;
@@ -601,9 +617,190 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-//todo
-//resend otp
-//change name
+//update user profile
+const updateProfile = asyncHandler(async (req: Request<{}, {}, UpdateProfileBody>, res: Response) => {
+  const { name } = req.body;
+  const userId = req.user?.id;
+
+  if (!userId) throw new ApiError(401, "Not Authorized");
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { name: name.trim() },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isEmailverified: true,
+      is2FAenabled: true,
+      profilePicture: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  });
+
+  const safeUser = {
+    id: updatedUser.id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    profilePicture: updatedUser.profilePicture ?? null,
+    isEmailVerified: updatedUser.isEmailverified,
+    is2FAenabled: updatedUser.is2FAenabled,
+    createdAt: updatedUser.createdAt,
+    updatedAt: updatedUser.updatedAt,
+  };
+
+  return res.status(200).json(
+    new ApiResponse(200, { user: safeUser }, "Profile updated successfully")
+  );
+});
+
+//change password
+const changePassword = asyncHandler(async (req: Request<{}, {}, ChangePasswordBody>, res: Response) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  const userId = req.user?.id;
+
+  if (!userId) throw new ApiError(401, "Not Authorized");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  const isCurrentPasswordValid = await comparePassword(currentPassword, user.password);
+  if (!isCurrentPasswordValid) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+
+  const hashedNewPassword = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedNewPassword }
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, {}, "Password changed successfully")
+  );
+});
+
+//get user stats
+const getUserStats = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) throw new ApiError(401, "Not Authorized");
+
+  const [workspacesCount, projectsCreated, projectsWithAccess, tasksCreated, tasksAssigned] = await Promise.all([
+    // Total workspaces user is member of
+    prisma.workspaceMembers.count({
+      where: { userId }
+    }),
+    // Projects user created
+    prisma.project.count({
+      where: { createdBy: userId }
+    }),
+    // Projects user has access to (through workspace membership)
+    prisma.projectAccess.count({
+      where: {
+        workspaceMember: {
+          userId: userId
+        },
+        hasAccess: true
+      }
+    }),
+    // Tasks user created
+    prisma.task.count({
+      where: { createdBy: userId }
+    }),
+    // Tasks assigned to user
+    prisma.task.count({
+      where: { assigneeId: userId }
+    })
+  ]);
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lastLogin: true, createdAt: true }
+  });
+
+  const stats = {
+    workspacesCount,
+    projectsCount: projectsCreated + projectsWithAccess,
+    tasksCount: tasksCreated + tasksAssigned,
+    lastLogin: user?.lastLogin,
+    memberSince: user?.createdAt
+  };
+
+  return res.status(200).json(
+    new ApiResponse(200, { stats }, "User stats fetched successfully")
+  );
+});
+
+
+//delete user account
+const deleteAccount = asyncHandler(async (req: Request<{}, {}, DeleteAccountBody>, res: Response) => {
+  const { password, confirmation, forceDelete } = req.body;
+  const userId = req.user?.id;
+
+  if (!userId) throw new ApiError(401, "Not Authorized");
+
+  // Validate confirmation text
+  if (confirmation !== "DELETE") {
+    throw new ApiError(400, "Please type DELETE to confirm account deletion");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      ownedWorkspaces: {
+        include: {
+          members: true
+        }
+      }
+    }
+  });
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  const isPasswordValid = await comparePassword(password, user.password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid password");
+  }
+
+  // Check if user owns workspaces with other members
+  const workspacesWithMembers = user.ownedWorkspaces.filter(
+    workspace => workspace.members.length > 1
+  );
+
+  if (workspacesWithMembers.length > 0 && !forceDelete) {
+    const workspaceNames = workspacesWithMembers.map(w => w.name).join(", ");
+    const error = new ApiError(
+      400,
+      `You own workspaces with other members: ${workspaceNames}. Transfer ownership or enable force delete to remove all workspaces.`
+    );
+    (error as any).requiresConfirmation = true;
+    (error as any).workspaces = workspacesWithMembers.map(w => ({ id: w.id, name: w.name }));
+    throw error;
+  }
+
+  // Delete user (cascade will handle related data including owned workspaces)
+  await prisma.user.delete({
+    where: { id: userId }
+  });
+
+  const options: CookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "Account deleted successfully"));
+});
 
 
 export {
@@ -618,5 +815,9 @@ export {
   toggle2FA,
   verify2FA,
   fetchCurrentUser,
-  refreshAccessToken
+  refreshAccessToken,
+  updateProfile,
+  changePassword,
+  getUserStats,
+  deleteAccount
 };

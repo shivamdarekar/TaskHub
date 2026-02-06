@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const registerSchema = z.object({
-    email: z.email({ message: "Invalid email address" }).nonempty({ message: "Email is required" }),
-    name: z.string().min(2, { message: "Name must be at least 2 characters long" }).nonempty({ message: "Name is required" }),
+    email: z.string().email({ message: "Invalid email address" }).min(1, { message: "Email is required" }),
+    name: z.string().min(2, { message: "Name must be at least 2 characters long" }).min(1, { message: "Name is required" }),
     password: z
         .string()
         .min(6, { message: "Password must be at least 6 characters long" })
@@ -11,8 +11,8 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-    email: z.email({ message: "Invalid email address" }).nonempty({ message: "Email is required" }),
-    password: z.string().nonempty({ message: "Password is required" })
+    email: z.string().email({ message: "Invalid email address" }).min(1, { message: "Email is required" }),
+    password: z.string().min(1, { message: "Password is required" })
 });
 
 export const resetPasswordSchema = z.object({
@@ -28,6 +28,30 @@ export const resetPasswordSchema = z.object({
 
 export const toggle2FASchema = z.object({
     password: z.string().min(1, "Password is required")
+});
+
+export const updateProfileSchema = z.object({
+    name: z.string()
+        .trim()
+        .min(1, { message: "Name is required" })
+        .min(2, { message: "Name must be at least 2 characters long" })
+        .max(100, { message: "Name cannot exceed 100 characters" })
+});
+
+export const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, { message: "Current password is required" }),
+    newPassword: z.string()
+        .min(6, { message: "Password must be at least 6 characters long" })
+        .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: "Password must contain a special character" }),
+    confirmPassword: z.string()
+}).refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"]
+});
+
+export const deleteAccountSchema = z.object({
+    password: z.string().min(1, { message: "Password is required" }),
+    confirmation: z.literal("DELETE", { message: "Please type DELETE to confirm" })
 });
 
 // Workspace Schemas
