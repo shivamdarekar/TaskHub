@@ -32,7 +32,7 @@ export default function PricingPage() {
             <CardHeader>
               <CardTitle className="text-2xl font-semibold">Free</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">$0</span>
+                <span className="text-4xl font-bold">₹0</span>
                 <span className="text-gray-500 ml-2">/month</span>
               </div>
             </CardHeader>
@@ -70,7 +70,7 @@ export default function PricingPage() {
             <CardHeader className="pt-2">
               <CardTitle className="text-2xl font-semibold">Pro</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">$5.99</span>
+                <span className="text-4xl font-bold">₹499</span>
                 <span className="text-gray-500 ml-2">/month</span>
               </div>
             </CardHeader>
@@ -105,7 +105,7 @@ export default function PricingPage() {
             <CardHeader>
               <CardTitle className="text-2xl font-semibold">Enterprise</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">$20</span>
+                <span className="text-4xl font-bold">₹1,699</span>
                 <span className="text-gray-500 ml-2">/month</span>
               </div>
             </CardHeader>

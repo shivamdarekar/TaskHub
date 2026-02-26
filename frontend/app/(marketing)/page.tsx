@@ -197,7 +197,7 @@ export default function Home() {
               <CardHeader className="pt-8">
                 <CardTitle className="text-2xl">Pro</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">$5.99</span>
+                  <span className="text-4xl font-bold">₹499</span>
                   <span className="text-gray-500 ml-2">/month</span>
                 </div>
               </CardHeader>
@@ -232,7 +232,7 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="text-2xl">Enterprise</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">$20</span>
+                  <span className="text-4xl font-bold">₹1,699</span>
                   <span className="text-gray-500 ml-2">/month</span>
                 </div>
               </CardHeader>
