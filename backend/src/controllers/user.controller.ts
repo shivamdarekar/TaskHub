@@ -10,6 +10,7 @@ import jwt from "jsonwebtoken";
 import { sendVerificationEmail } from "../services/verifyEmail";
 import { sendPasswordResetOTP } from "../services/resetPass";
 import { sendTwoFAEmail } from "../services/TwoFA";
+import { PLAN_LIMITS } from "../services/razorpay.service";
 
 
 interface RegisterUserBody {
@@ -72,19 +73,57 @@ const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>,
 
   if (!name || !email || !password) throw new ApiError(400, "All fields are required");
 
-  const isUserExists = await prisma.user.findUnique({
-    where: { email },
-  });
+  let isUserExists;
+  try {
+    isUserExists = await prisma.user.findUnique({
+      where: { email },
+    });
+  } catch (error: any) {
+    if (error.code === 'P1001' || error.message?.includes("Can't reach database")) {
+      throw new ApiError(503, "Service temporarily unavailable. Please try again later.");
+    }
+    throw new ApiError(500, "An error occurred. Please try again.");
+  }
 
   if (isUserExists) throw new ApiError(409, "User already exists");
 
   const hashedPassword = await hashPassword(password);
 
-  const user = await prisma.user.create({
-    data: { name, email, password: hashedPassword },
-  });
+  // Create user and subscription in a transaction
+  let user;
+  try {
+    user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: { name, email, password: hashedPassword },
+      });
 
-  if (!user) throw new ApiError(500, "Error while creating User");
+      if (!newUser) throw new ApiError(500, "Error while creating User");
+
+      // Create default FREE subscription for new user
+      const freeLimits = PLAN_LIMITS.FREE;
+      await tx.subscription.create({
+        data: {
+          userId: newUser.id,
+          plan: "FREE",
+          status: "ACTIVE",
+          frequency: "monthly",
+          maxWorkspaces: freeLimits.maxWorkspaces,
+          maxMembers: freeLimits.maxMembers,
+          maxProjects: freeLimits.maxProjects,
+          maxTasks: freeLimits.maxTasks,
+          maxStorage: freeLimits.maxStorage,
+        },
+      });
+
+      return newUser;
+    });
+  } catch (error: any) {
+    if (error.code === 'P1001' || error.message?.includes("Can't reach database")) {
+      throw new ApiError(503, "Service temporarily unavailable. Please try again later.");
+    }
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, "Error while creating user. Please try again.");
+  }
 
   //generate verification token
   const verificationToken = generateEmailVerificationToken(user.id);
@@ -204,9 +243,17 @@ const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserBody>, res: 
   if (!email || !password) throw new ApiError(400, "Email and Password are required");
 
   //find user
-  const user = await prisma.user.findUnique({
-    where: { email }
-  });
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { email }
+    });
+  } catch (error: any) {
+    if (error.code === 'P1001' || error.message?.includes("Can't reach database")) {
+      throw new ApiError(503, "Service temporarily unavailable. Please try again later.");
+    }
+    throw new ApiError(500, "An error occurred during login. Please try again.");
+  }
 
   if (!user) {
     throw new ApiError(404, "Invalid Credentials");

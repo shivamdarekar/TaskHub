@@ -15,11 +15,12 @@ import { createWorkSpace,
 import { validate } from "../config/validate";
 import { createWorkspaceSchema } from "../config/schema";
 import { hasWorkspaceAccess, isWorkspaceOwner } from "../middleware/roleCheck.middleware";
+import { canCreateWorkspace } from "../middleware/subscriptionLimit.middleware";
 
 const router = Router();
 router.use(verifyJWT);
 
-router.post("/create", validate(createWorkspaceSchema), createWorkSpace);
+router.post("/create", validate(createWorkspaceSchema), canCreateWorkspace, createWorkSpace);
 
 router.get("/get", getUserWorkspace);
 

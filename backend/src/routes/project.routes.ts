@@ -6,6 +6,7 @@ import {
   canManageProject,
   isWorkspaceOwner
 } from "../middleware/roleCheck.middleware";
+import { canCreateProject } from "../middleware/subscriptionLimit.middleware";
 import { validate } from "../config/validate";
 import { createProjectSchema, updateProjectSchema, addProjectMembersSchema, removeProjectMemberSchema } from "../config/schema";
 import {
@@ -29,6 +30,7 @@ router.use(verifyJWT);
 
 router.post("/workspace/:workspaceId/create",
     isWorkspaceOwner,
+    canCreateProject,
     validate(createProjectSchema),
     createProject
 );

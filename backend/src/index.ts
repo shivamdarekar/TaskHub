@@ -9,6 +9,8 @@ import taskRoutes from "./routes/task.routes"
 import commentRoutes from "./routes/comment.routes"
 import documentationRoutes from "./routes/documentation.routes";
 import inviteRoutes from "./routes/invite.routes";
+import subscriptionRoutes from "./routes/subscription.routes";
+import webhookRoutes from "./routes/webhook.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 
@@ -20,6 +22,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Webhook route (before body parser for raw body access)
+app.use("/api/v1/webhook", express.raw({ type: "application/json" }), webhookRoutes);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -40,6 +45,7 @@ app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/documentation", documentationRoutes);
 app.use("/api/v1/invite", inviteRoutes);
+app.use("/api/v1/subscription", subscriptionRoutes);
 
 app.use(errorHandler);
 

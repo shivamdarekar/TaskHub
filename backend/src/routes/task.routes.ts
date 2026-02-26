@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middleware/auth.middleware";
 import { hasProjectAccess, verifyTaskExists, canModifyTask, hasWorkspaceAccess } from "../middleware/roleCheck.middleware";
+import { canCreateTask } from "../middleware/subscriptionLimit.middleware";
 import { validate } from "../config/validate";
 import { createTaskSchema, updateTaskSchema } from "../config/schema";
 import {
@@ -24,7 +25,7 @@ router.use(verifyJWT);
 router.get("/workspace/:workspaceId/my-tasks", hasWorkspaceAccess, getUserTasks);
 
 //project level tasks
-router.post("/project/:projectId/create", hasProjectAccess, validate(createTaskSchema), createTask);
+router.post("/project/:projectId/create", hasProjectAccess, canCreateTask, validate(createTaskSchema), createTask);
 
 router.get("/project/:projectId/tasks", hasProjectAccess, getProjectTasks);
 

@@ -161,3 +161,18 @@ export const updateTaskSchema = z.object({
     startDate: z.string().optional().nullable(),
     assigneeId: z.string().uuid("Invalid assignee ID format").optional().nullable(),
 });
+
+// Subscription Schemas
+export const createSubscriptionOrderSchema = z.object({
+    plan: z.enum(["PRO", "ENTERPRISE"], { message: "Invalid plan. Must be PRO or ENTERPRISE" }),
+    frequency: z.enum(["monthly", "yearly"], { message: "Invalid frequency. Must be monthly or yearly" }),
+});
+
+export const verifyPaymentSchema = z.object({
+    razorpay_order_id: z.string().min(1, "Order ID is required"),
+    razorpay_payment_id: z.string().min(1, "Payment ID is required"),
+    razorpay_signature: z.string().min(1, "Signature is required"),
+    plan: z.enum(["PRO", "ENTERPRISE"], { message: "Invalid plan" }),
+    frequency: z.enum(["monthly", "yearly"], { message: "Invalid frequency" }),
+});
+
