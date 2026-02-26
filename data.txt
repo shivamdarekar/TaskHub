@@ -9,6 +9,8 @@
 - npx prisma init
 - npx prisma migrate dev --name init
 - npm i zod
+- npm install razorpay
+- npm install --save-dev @types/razorpay
 
 - why not to setup prisma inside src - prima migration always look for prisma/schema.prisma 
 Keeping schema.prisma inside src/ makes migrations/config messy.
@@ -23,9 +25,12 @@ Keeping schema.prisma inside src/ makes migrations/config messy.
 
 
 //add caching in slices 
-
-//invite member is pending
 // onwer invite member, member click request to join
    owner accept request then member join 
+
+//next check db extra query reduce it or use raw sql 
+//at initial load the ui not look good it animation and transition work weird
+
+//Send confirmation email after account deletion
 
 
