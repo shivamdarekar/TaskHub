@@ -265,15 +265,68 @@ model Subscription {
   razorpayCustomerId     String?
   razorpaySubscriptionId String?
   razorpayPaymentId      String?
-  razorpaySignature      String?
 
   // Subscription lifecycle
-  currentPeriodEnd  DateTime?
-  cancelAtPeriodEnd Boolean   @default(false)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+
+  //plan limits
+  maxWorkspaces  Int @default(1)
+  maxMembers     Int @default(2)
+  maxProjects    Int @default(5)
+  maxTasks       Int @default(20)
+  maxStorage     Int @default(0)
+
+  //Relations
+  transactions  Transaction[]
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([status])
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+model Transaction {
+  id             String @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Razorpay fields
+  razorpayPaymentId  String  @unique
+  razorpayOrderId    String?
+  razorpaySignature  String?
+
+  // Transaction details
+  amount         Float
+  currency       String         @default("INR")
+  status         PaymentStatus  @default(PENDING)
+  
+  plan           SubscriptionPlan
+  frequency      String // monthly, yearly
+
+  receiptUrl     String?
+  invoiceId      String?
+
+  // Metadata
+  paymentMethod  String?
+  email          String?
+  contact        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
+  @@index([razorpayPaymentId])
+  @@index([razorpayOrderId])
+
 }
