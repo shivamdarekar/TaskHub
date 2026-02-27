@@ -78,7 +78,7 @@ export default function TaskDocumentation({ projectId, taskId }: TaskDocumentati
     
     setIsSavingDoc(true);
     try {
-      console.log('Saving documentation with:', { projectId, taskId, documentation: JSON.stringify(editorState) });
+      // Saving documentation
       await dispatch(saveDocumentation({ 
         projectId, 
         taskId, 
@@ -87,7 +87,6 @@ export default function TaskDocumentation({ projectId, taskId }: TaskDocumentati
       setHasChanges(false);
       toast.success("Documentation saved successfully");
     } catch (error) {
-      console.error('Documentation save error:', error);
       toast.error(typeof error === 'string' ? error : "Failed to save documentation");
     } finally {
       setIsSavingDoc(false);

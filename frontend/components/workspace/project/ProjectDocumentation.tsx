@@ -88,7 +88,6 @@ export default function ProjectDocumentation({ project }: ProjectDocumentationPr
       setHasChanges(false);
       toast.success("Documentation saved successfully");
     } catch (error) {
-      console.error('Documentation save error:', error);
       toast.error(typeof error === 'string' ? error : "Failed to save documentation");
     } finally {
       setIsSavingDoc(false);

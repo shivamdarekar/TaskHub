@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { loginUser, verify2FA, clearError } from "@/redux/slices/authSlice";
 import {fetchUserWorkspaces} from "@/redux/slices/workspaceSlice";
 import AuthNavbar from "@/components/AuthNavbar";
+import { OTP_LENGTH } from "@/lib/constants";
 
 interface LoginResponse {
   requiresTwoFA: boolean;
@@ -233,7 +234,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-                disabled={loading || twoFaSubmitting || twoFAData.otp.length !== 6}
+                disabled={loading || twoFaSubmitting || twoFAData.otp.length !== OTP_LENGTH}
               >
                 {loading || twoFaSubmitting ? (
                   <>

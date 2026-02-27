@@ -40,11 +40,6 @@ export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated
 
     setIsSubmitting(true);
     try {
-      console.log('Updating task with:', {
-        projectId: task.projectId,
-        taskId: task.id,
-        ...formData
-      });
       const originalStatus = task.status;
       await dispatch(updateTask({
         projectId: task.projectId,
@@ -65,7 +60,6 @@ export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated
       onTaskUpdated?.();
       onOpenChange(false);
     } catch (error) {
-      console.error('Task update error:', error);
       toast.error(typeof error === 'string' ? error : "Failed to update task", {duration:1500});
     } finally {
       setIsSubmitting(false);

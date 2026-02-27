@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User } from "lucide-react";
+import { validateName } from "@/lib/validation";
 
 interface PersonalInfoFormProps {
   initialName: string;
@@ -16,32 +17,21 @@ export default function PersonalInfoForm({ initialName, email, loading, onSubmit
   const [name, setName] = useState(initialName);
   const [nameError, setNameError] = useState("");
 
-  const validateName = (value: string) => {
-    if (!value.trim()) {
-      setNameError("Name is required");
-      return false;
-    }
-    if (value.trim().length < 2) {
-      setNameError("Name must be at least 2 characters");
-      return false;
-    }
-    if (value.trim().length > 50) {
-      setNameError("Name must be less than 50 characters");
-      return false;
-    }
-    setNameError("");
-    return true;
+  const validateNameField = (value: string) => {
+    const error = validateName(value.trim());
+    setNameError(error);
+    return !error;
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setName(value);
-    if (nameError) validateName(value);
+    if (nameError) validateNameField(value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateName(name)) {
+    if (validateNameField(name)) {
       onSubmit(name);
     }
   };
@@ -64,7 +54,7 @@ export default function PersonalInfoForm({ initialName, email, loading, onSubmit
                 id="name"
                 value={name}
                 onChange={handleNameChange}
-                onBlur={() => validateName(name)}
+                onBlur={() => validateNameField(name)}
                 placeholder="Enter your full name"
                 className={`h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
                   nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''

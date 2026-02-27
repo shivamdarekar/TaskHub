@@ -119,8 +119,8 @@ export default function CreateProjectDialog({
 
       // Navigate to new project
       router.push(`/workspace/${workspaceId}/projects/${result.id}`);
-    } catch (err) {
-      console.error("Failed to create project:", err);
+    } catch {
+      // Project creation failed
     }
   };
 

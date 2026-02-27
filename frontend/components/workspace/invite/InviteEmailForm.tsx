@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Send, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { validateEmail } from "@/lib/validation";
 
 interface InviteEmailFormProps {
   onSendInvite: (email: string) => Promise<void>;
@@ -27,10 +28,10 @@ export default function InviteEmailForm({
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address");
+    // Email validation using shared utility
+    const emailError = validateEmail(email);
+    if (emailError) {
+      toast.error(emailError);
       return;
     }
 

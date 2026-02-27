@@ -11,6 +11,7 @@ import { registerUser,clearError } from "@/redux/slices/authSlice";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthNavbar from "@/components/AuthNavbar";
 import { fetchUserWorkspaces } from "@/redux/slices/workspaceSlice";
+import { validateName, validateEmail, validatePassword } from "@/lib/validation";
 
 
 export default function RegisterPage() {
@@ -79,25 +80,16 @@ export default function RegisterPage() {
     const newErrors: Record<string, string> = {};
 
     // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
+    const nameError = validateName(formData.name.trim());
+    if (nameError) newErrors.name = nameError;
 
     // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
 
     // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
-    newErrors.password = "Password must include at least one special character";
-  }
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
     // Confirm password validation
     if (formData.password !== formData.confirmPassword) {

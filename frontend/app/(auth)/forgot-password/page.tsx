@@ -23,6 +23,8 @@ import {
   resetPassword,
   clearError,
 } from "@/redux/slices/authSlice";
+import { OTP_LENGTH } from "@/lib/constants";
+import { validatePassword } from "@/lib/validation";
 
 // Flow stages
 type ResetStage = "email" | "otp" | "password" | "success";
@@ -90,18 +92,9 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError("");
 
-    if (!password) {
-      setError("Please enter a new password");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      setError("Password must contain at least one special character");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -231,7 +224,7 @@ export default function ForgotPasswordPage() {
                   type="text"
                   value={otp}
                   onChange={(e) =>
-                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH))
                   }
                   placeholder="000000"
                   disabled={loading}
@@ -244,7 +237,7 @@ export default function ForgotPasswordPage() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-                disabled={loading || otp.length !== 6}
+                disabled={loading || otp.length !== OTP_LENGTH}
               >
                 {loading ? (
                   <>
@@ -302,8 +295,7 @@ export default function ForgotPasswordPage() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1.5">
-                  Password must be at least 6 characters and include at least one
-                  special character
+                  Password must be at least 6 characters and include uppercase, lowercase, number, and special character
                 </p>
               </div>
 

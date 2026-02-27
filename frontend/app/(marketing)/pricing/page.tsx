@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +11,32 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { fetchUserWorkspaces } from "@/redux/slices/workspaceSlice";
+import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/constants";
 
 export default function PricingPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  const handlePlanClick = async (plan: "FREE" | "PRO" | "ENTERPRISE") => {
+    if (!isAuthenticated) {
+      router.push(`/register?plan=${plan.toLowerCase()}`);
+      return;
+    }
+
+    try {
+      const workspaces = await dispatch(fetchUserWorkspaces()).unwrap();
+      if (workspaces.length === 0) {
+        router.push("/workspace/create?from=/account/upgrade");
+      } else {
+        router.push("/account/upgrade");
+      }
+    } catch {
+      // If workspace fetch fails, still allow upgrade
+      router.push("/account/upgrade");
+    }
+  };
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Navbar */}
@@ -38,13 +64,7 @@ export default function PricingPage() {
             </CardHeader>
             <CardContent className="pt-4">
               <ul className="space-y-3">
-                {[
-                  "1 Workspace",
-                  "Up to 5 Projects",
-                  "Up to 20 Tasks",
-                  "Basic Task Management",
-                  "2 Team Members",
-                ].map((feature, i) => (
+                {PLAN_FEATURES.FREE.map((feature, i) => (
                   <li key={i} className="flex items-center">
                     <Check className="h-5 w-5 text-green-500 mr-3" />
                     <span>{feature}</span>
@@ -53,8 +73,12 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full">
-                Get Started
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => handlePlanClick("FREE")}
+              >
+                {isAuthenticated ? "Current Plan" : "Get Started"}
               </Button>
             </CardFooter>
           </Card>
@@ -70,22 +94,14 @@ export default function PricingPage() {
             <CardHeader className="pt-2">
               <CardTitle className="text-2xl font-semibold">Pro</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">₹499</span>
+                <span className="text-4xl font-bold">₹{PLAN_PRICES.PRO.monthly}</span>
                 <span className="text-gray-500 ml-2">/month</span>
               </div>
             </CardHeader>
 
             <CardContent className="pt-4">
               <ul className="space-y-3">
-                {[
-                  "Up to 10 Workspaces",
-                  "Unlimited Projects",
-                  "Unlimited Tasks",
-                  "Team Collaboration (Up to 20 Members)",
-                  "Calendar View",
-                  "Project Timeline (Gantt Chart)",
-                  "File Storage (10 Files Per Task)",
-                ].map((feature, i) => (
+                {PLAN_FEATURES.PRO.map((feature, i) => (
                   <li key={i} className="flex items-center">
                     <Check className="h-5 w-5 text-green-500 mr-3" />
                     <span>{feature}</span>
@@ -94,8 +110,11 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all">
-                Upgrade
+              <Button 
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
+                onClick={() => handlePlanClick("PRO")}
+              >
+                {isAuthenticated ? "Upgrade to Pro" : "Start Free Trial"}
               </Button>
             </CardFooter>
           </Card>
@@ -105,22 +124,14 @@ export default function PricingPage() {
             <CardHeader>
               <CardTitle className="text-2xl font-semibold">Enterprise</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">₹1,699</span>
+                <span className="text-4xl font-bold">₹{PLAN_PRICES.ENTERPRISE.monthly.toLocaleString()}</span>
                 <span className="text-gray-500 ml-2">/month</span>
               </div>
             </CardHeader>
 
             <CardContent className="pt-4">
               <ul className="space-y-3">
-                {[
-                  "Everything in Pro Plan",
-                  "Unlimited Workspaces",
-                  "Unlimited Team Collaboration",
-                  "Unlimited File Storage (Fair-use Policy Applies)",
-                  "Priority Support",
-                  "Advanced Security Features",
-                  "Custom Integrations",
-                ].map((feature, i) => (
+                {PLAN_FEATURES.ENTERPRISE.map((feature, i) => (
                   <li key={i} className="flex items-center">
                     <Check className="h-5 w-5 text-green-500 mr-3" />
                     <span>{feature}</span>
@@ -129,8 +140,11 @@ export default function PricingPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all">
-                Upgrade
+              <Button 
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
+                onClick={() => handlePlanClick("ENTERPRISE")}
+              >
+                {isAuthenticated ? "Upgrade to Enterprise" : "Contact Sales"}
               </Button>
             </CardFooter>
           </Card>

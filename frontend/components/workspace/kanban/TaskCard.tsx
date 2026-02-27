@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TASK_PRIORITY_COLORS } from "@/lib/constants";
 
 interface TaskCardProps {
   task: Task;
@@ -14,19 +15,19 @@ interface TaskCardProps {
 
 const PRIORITY_CONFIG = {
   [TaskPriority.LOW]: {
-    color: "bg-gray-100 text-gray-800",
+    color: TASK_PRIORITY_COLORS.LOW,
     label: "Low"
   },
   [TaskPriority.MEDIUM]: {
-    color: "bg-yellow-100 text-yellow-800",
+    color: TASK_PRIORITY_COLORS.MEDIUM,
     label: "Medium"
   },
   [TaskPriority.HIGH]: {
-    color: "bg-orange-100 text-orange-800", 
+    color: TASK_PRIORITY_COLORS.HIGH, 
     label: "High"
   },
   [TaskPriority.CRITICAL]: {
-    color: "bg-red-100 text-red-800",
+    color: TASK_PRIORITY_COLORS.CRITICAL,
     label: "Critical"
   }
 };

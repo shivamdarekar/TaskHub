@@ -11,6 +11,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import EditTaskDialog from "./EditTaskDialog";
 import DeleteTaskDialog from "./DeleteTaskDialog";
+import { TASK_STATUS_COLORS, TASK_PRIORITY_COLORS } from "@/lib/constants";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -29,16 +30,16 @@ interface TaskTableProps {
 
 const getStatusBadge = (status: TaskStatus) => {
   const statusConfig = {
-    [TaskStatus.TODO]: { label: "TODO", className: "bg-gray-100 text-gray-800 text-xs px-2 py-1" },
-    [TaskStatus.IN_PROGRESS]: { label: "IN PROGRESS", className: "bg-blue-100 text-blue-800 text-xs px-2 py-1" },
-    [TaskStatus.IN_REVIEW]: { label: "IN REVIEW", className: "bg-yellow-100 text-yellow-800 text-xs px-2 py-1" },
-    [TaskStatus.COMPLETED]: { label: "COMPLETED", className: "bg-green-100 text-green-800 text-xs px-2 py-1" },
-    [TaskStatus.BACKLOG]: { label: "BACKLOG", className: "bg-purple-100 text-purple-800 text-xs px-2 py-1" },
+    [TaskStatus.TODO]: { label: "TODO", className: TASK_STATUS_COLORS.TODO },
+    [TaskStatus.IN_PROGRESS]: { label: "IN PROGRESS", className: TASK_STATUS_COLORS.IN_PROGRESS },
+    [TaskStatus.IN_REVIEW]: { label: "IN REVIEW", className: TASK_STATUS_COLORS.IN_REVIEW },
+    [TaskStatus.COMPLETED]: { label: "COMPLETED", className: TASK_STATUS_COLORS.COMPLETED },
+    [TaskStatus.BACKLOG]: { label: "BACKLOG", className: TASK_STATUS_COLORS.BACKLOG },
   };
   
   const config = statusConfig[status];
   return (
-    <Badge className={config.className}>
+    <Badge className={`${config.className} text-xs px-2 py-1`}>
       <span className="hidden sm:inline">{config.label}</span>
       <span className="sm:hidden">{config.label.split(' ')[0]}</span>
     </Badge>
@@ -47,10 +48,10 @@ const getStatusBadge = (status: TaskStatus) => {
 
 const getPriorityText = (priority: TaskPriority) => {
   const priorityConfig = {
-    [TaskPriority.LOW]: { label: "LOW", short: "L", className: "text-green-600" },
-    [TaskPriority.MEDIUM]: { label: "MEDIUM", short: "M", className: "text-yellow-600" },
-    [TaskPriority.HIGH]: { label: "HIGH", short: "H", className: "text-orange-600" },
-    [TaskPriority.CRITICAL]: { label: "CRITICAL", short: "C", className: "text-red-600" },
+    [TaskPriority.LOW]: { label: "LOW", short: "L", className: TASK_PRIORITY_COLORS.LOW },
+    [TaskPriority.MEDIUM]: { label: "MEDIUM", short: "M", className: TASK_PRIORITY_COLORS.MEDIUM },
+    [TaskPriority.HIGH]: { label: "HIGH", short: "H", className: TASK_PRIORITY_COLORS.HIGH },
+    [TaskPriority.CRITICAL]: { label: "CRITICAL", short: "C", className: TASK_PRIORITY_COLORS.CRITICAL },
   };
   
   const config = priorityConfig[priority];
@@ -242,7 +243,7 @@ export default function TaskTable({
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => console.log('Duplicate task:', task.id)}>
+                          <DropdownMenuItem onClick={() => {/* TODO: Implement duplicate */}}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>

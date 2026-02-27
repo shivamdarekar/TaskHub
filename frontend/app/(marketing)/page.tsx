@@ -21,12 +21,13 @@ import {
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { fetchUserWorkspaces } from "@/redux/slices/workspaceSlice";
+import { PLAN_PRICES } from "@/lib/constants";
 
 
 export default function Home() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, authLoading } = useAppSelector(
+  const { isAuthenticated, authLoading, user } = useAppSelector(
     (state) => state.auth
   );
   const {workspaces,loading} = useAppSelector((state) => state.workspace);
@@ -197,7 +198,7 @@ export default function Home() {
               <CardHeader className="pt-8">
                 <CardTitle className="text-2xl">Pro</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">₹499</span>
+                  <span className="text-4xl font-bold">₹{PLAN_PRICES.PRO.monthly}</span>
                   <span className="text-gray-500 ml-2">/month</span>
                 </div>
               </CardHeader>
@@ -221,8 +222,30 @@ export default function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all">
-                  Upgrade
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
+                  onClick={async () => {
+                    if (!isAuthenticated) {
+                      router.push("/register?plan=pro");
+                      return;
+                    }
+                    if (!user?.isEmailVerified) {
+                      router.push("/verify-email");
+                      return;
+                    }
+                    try {
+                      const ws = await dispatch(fetchUserWorkspaces()).unwrap();
+                      if (ws.length === 0) {
+                        router.push("/workspace/create?from=/account/upgrade");
+                      } else {
+                        router.push("/account/upgrade");
+                      }
+                    } catch {
+                      router.push("/account/upgrade");
+                    }
+                  }}
+                >
+                  {isAuthenticated ? "Upgrade to Pro" : "Start Free Trial"}
                 </Button>
               </CardFooter>
             </Card>
@@ -232,7 +255,7 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="text-2xl">Enterprise</CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">₹1,699</span>
+                  <span className="text-4xl font-bold">₹{PLAN_PRICES.ENTERPRISE.monthly.toLocaleString()}</span>
                   <span className="text-gray-500 ml-2">/month</span>
                 </div>
               </CardHeader>
@@ -253,8 +276,30 @@ export default function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all">
-                  Upgrade
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all"
+                  onClick={async () => {
+                    if (!isAuthenticated) {
+                      router.push("/register?plan=enterprise");
+                      return;
+                    }
+                    if (!user?.isEmailVerified) {
+                      router.push("/verify-email");
+                      return;
+                    }
+                    try {
+                      const ws = await dispatch(fetchUserWorkspaces()).unwrap();
+                      if (ws.length === 0) {
+                        router.push("/workspace/create?from=/account/upgrade");
+                      } else {
+                        router.push("/account/upgrade");
+                      }
+                    } catch {
+                      router.push("/account/upgrade");
+                    }
+                  }}
+                >
+                  {isAuthenticated ? "Upgrade to Enterprise" : "Contact Sales"}
                 </Button>
               </CardFooter>
             </Card>

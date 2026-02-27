@@ -285,7 +285,7 @@ export default function MyTasksPage() {
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => console.log('Duplicate task:', task.id)}>
+                      <DropdownMenuItem onClick={() => {/* TODO: Implement duplicate */}}>
                         <Copy className="h-4 w-4 mr-2" />
                         Duplicate
                       </DropdownMenuItem>

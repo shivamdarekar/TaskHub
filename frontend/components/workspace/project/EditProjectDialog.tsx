@@ -56,7 +56,6 @@ export default function EditProjectDialog({
       onProjectUpdated?.();
       onOpenChange(false);
     } catch (error) {
-      console.error('Project update error:', error);
       toast.error(typeof error === 'string' ? error : "Failed to update project");
     } finally {
       setIsSubmitting(false);
