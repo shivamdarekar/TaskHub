@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
+import { clearProjects } from "@/redux/slices/projectSlice";
 
 import {
   Home,
@@ -14,14 +15,9 @@ import {
   FolderKanban,
   Plus,
   LayoutGrid,
-  LogOut,
-  User,
   Menu,
   X,
   ChevronsUpDown,
-  Crown,
-  CreditCard,
-  ChevronUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,9 +29,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { clearUser, logoutUser } from "@/redux/slices/authSlice";
-import { resetAppState } from "@/redux/actions/appActions";
-import { persistor } from "@/redux/store";
 import CreateProjectDialog from "./CreateProjectDialog";
 
 interface SidebarProps {
@@ -44,9 +37,9 @@ interface SidebarProps {
 
 export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const params = useParams();
   const pathname = usePathname();
-  const dispatch = useAppDispatch();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
@@ -57,7 +50,6 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
   );
 
   const {projects} = useAppSelector((state) => state.project);
-  const { user } = useAppSelector((state) => state.auth);
 
   // MENU ITEMS
   const menuItems = [
@@ -89,25 +81,10 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
 
   // SWITCH WORKSPACE
   const handleWorkspaceChange = (newWorkspaceId: string) => {
+    // Clear project state when switching workspaces
+    dispatch(clearProjects());
     router.push(`/workspace/${newWorkspaceId}`);
   };
-
-  const handleLogout = async () => {
-  try {
-    await dispatch(logoutUser()).unwrap();
-    dispatch(clearUser());
-    dispatch(resetAppState());
-    persistor.purge(); // Clear persisted data
-    router.push("/"); 
-  } catch (error) {
-    console.error("Logout failed:", error);
-    // Even if API fails, clear local state and redirect
-    dispatch(clearUser());
-    dispatch(resetAppState());
-    persistor.purge(); // clear persisted data
-    router.push("/login");
-  }
-};
 
   // Generate consistent color for workspace based on name
   const getWorkspaceColor = (name: string) => {
@@ -385,95 +362,6 @@ export default function WorkspaceSidebar({ workspaceId }: SidebarProps) {
               </nav>
             )}
           </div>
-        </div>
-
-        {/* USER FOOTER */}
-        <div className="border-t border-gray-200 p-3 bg-white">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 transition-all hover:shadow-sm",
-                  isCollapsed && "justify-center"
-                )}
-              >
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center shrink-0 shadow-sm">
-                  <User className="h-4 w-4 text-white" />
-                </div>
-
-                {!isCollapsed && (
-                  <div className="flex-1 flex items-center justify-between overflow-hidden">
-                    <div className="flex-1 text-left overflow-hidden">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {user?.name}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                    <ChevronUp className="h-4 w-4 text-gray-600 shrink-0" />
-                  </div>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent side="top" align="start" className="w-64 p-2">
-              {/* Header with company name and email */}
-              <div className="px-2 py-3 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <span className="text-white text-sm font-semibold">
-                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                    </span>
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {user?.name || "Workspace"}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user?.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Menu Items */}
-              <div className="py-1">
-                <DropdownMenuItem
-                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md"
-                >
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm">Upgrade to Pro</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => router.push(`/workspace/${workspaceId}/profile`)}
-                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md"
-                >
-                  <User className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm">Profile</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => router.push("/billing")}
-                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md"
-                >
-                  <CreditCard className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm">Billing</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-1" />
-
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer flex items-center gap-3 px-2 py-2 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="text-sm">Log out</span>
-                </DropdownMenuItem>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </aside>
 
