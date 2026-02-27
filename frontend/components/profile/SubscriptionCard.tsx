@@ -48,7 +48,7 @@ export default function SubscriptionCard() {
     );
   }
 
-  const details = planDetails[subscription.plan];
+  const details = planDetails[subscription.plan as keyof typeof planDetails];
 
   // Check if subscription is expired
   const now = new Date();

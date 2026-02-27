@@ -133,7 +133,7 @@ export default function KanbanBoard({ tasks, onTaskMove, loading }: KanbanBoardP
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 h-full overflow-x-auto pb-6">
+      <div className="flex gap-4 md:gap-6 h-full overflow-x-auto pb-6 snap-x snap-mandatory md:snap-none">
         {Object.entries(COLUMN_CONFIG).map(([status, config]) => {
           const columnTasks = tasks[status as TaskStatus] || [];
           const isOver = draggedOverColumn === status;

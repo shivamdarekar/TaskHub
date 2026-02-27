@@ -67,15 +67,15 @@ export default function KanbanPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kanban Board</h1>
-          <p className="text-gray-600">Drag and drop tasks to update their status</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Kanban Board</h1>
+          <p className="text-sm md:text-base text-gray-600">Drag and drop tasks to update their status</p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <Select value={view} onValueChange={(value: "all" | "assigned" | "created") => setView(value)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full md:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

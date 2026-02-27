@@ -150,7 +150,7 @@ export default function MyTasksPage() {
         title="My Tasks" 
         subtitle="Tasks assigned to you across all projects"
       />
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
@@ -307,8 +307,8 @@ export default function MyTasksPage() {
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-gray-600 text-center md:text-left">
             Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
             {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
             {pagination.total} tasks

@@ -31,7 +31,7 @@ export default function KanbanColumn({
   });
 
   return (
-    <div className="flex flex-col min-w-80 max-w-80">
+    <div className="flex flex-col min-w-72 md:min-w-80 max-w-72 md:max-w-80 snap-start">
       {/* Column Header */}
       <div className={cn(
         "flex items-center justify-between p-4 rounded-t-lg border-2",

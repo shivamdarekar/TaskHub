@@ -102,7 +102,7 @@ export default function ProjectsListPage() {
       />
 
       {/* MAIN CONTENT */}
-      <div className="p-8">
+      <div className="p-4 md:p-6 lg:p-8">
         {projects.length === 0 ? (
           <div className="text-center py-12 animate-in slide-in-from-bottom-4 duration-700 delay-300">
             <div className="flex flex-col items-center gap-4">
