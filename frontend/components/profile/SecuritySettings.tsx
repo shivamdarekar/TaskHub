@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Key, Check, X } from "lucide-react";
+import { validatePassword } from "@/lib/validation";
 
 interface SecuritySettingsProps {
   is2FAenabled: boolean;
@@ -28,26 +29,12 @@ export default function SecuritySettings({ is2FAenabled, passwordLoading, twoFAL
     toggle2FAPassword: ""
   });
 
-  const validatePassword = (password: string, field: string) => {
-    if (!password) {
-      return `${field} is required`;
-    }
-    if (field === "New password" || field === "Confirm password") {
-      if (password.length < 6) {
-        return "Password must be at least 6 characters long";
-      }
-      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-        return "Password must contain a special character";
-      }
-    }
-    return "";
-  };
-
   const handleCurrentPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setCurrentPassword(value);
     if (errors.currentPassword) {
-      setErrors(prev => ({ ...prev, currentPassword: validatePassword(value, "Current password") }));
+      const error = validatePassword(value, "Current password");
+      setErrors(prev => ({ ...prev, currentPassword: error }));
     }
   };
 
@@ -55,7 +42,8 @@ export default function SecuritySettings({ is2FAenabled, passwordLoading, twoFAL
     const value = e.target.value;
     setNewPassword(value);
     if (errors.newPassword) {
-      setErrors(prev => ({ ...prev, newPassword: validatePassword(value, "New password") }));
+      const error = validatePassword(value, "New password");
+      setErrors(prev => ({ ...prev, newPassword: error }));
     }
     if (confirmPassword && value !== confirmPassword) {
       setErrors(prev => ({ ...prev, confirmPassword: "Passwords don't match" }));

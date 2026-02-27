@@ -32,5 +32,7 @@ Keeping schema.prisma inside src/ makes migrations/config messy.
 //at initial load the ui not look good it animation and transition work weird
 
 //Send confirmation email after account deletion
+//use docker image 
+//redis for caching
 
 
