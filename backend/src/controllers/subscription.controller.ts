@@ -13,7 +13,7 @@ export const getCurrentSubscription = asyncHandler(async (req: Request, res: Res
 
   if (!userId) throw new ApiError(401, "Not Authorized");
 
-  const subscription = await prisma.subscription.findUnique({
+  let subscription = await prisma.subscription.findUnique({
     where: { userId },
     include: {
       transactions: {
@@ -25,6 +25,36 @@ export const getCurrentSubscription = asyncHandler(async (req: Request, res: Res
 
   if (!subscription) {
     throw new ApiError(404, "Subscription not found");
+  }
+
+  // Check if subscription has expired (real-time check)
+  const now = new Date();
+  if (
+    subscription.plan !== "FREE" &&
+    subscription.currentPeriodEnd &&
+    subscription.currentPeriodEnd < now &&
+    subscription.status === "ACTIVE"
+  ) {
+    // Auto-downgrade to FREE on expiry (soft limit - don't delete data)
+    subscription = await prisma.subscription.update({
+      where: { userId },
+      data: {
+        plan: "FREE",
+        status: "EXPIRED",
+        frequency: "monthly",
+        maxWorkspaces: 1,
+        maxMembers: 2,
+        maxProjects: 5,
+        maxTasks: 20,
+        maxStorage: 0,
+      },
+      include: {
+        transactions: {
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        },
+      },
+    });
   }
 
   return res.status(200).json(
@@ -54,19 +84,29 @@ export const createSubscriptionOrder = asyncHandler(async (req: Request, res: Re
 
   if (!subscription) throw new ApiError(404, "Subscription not found");
 
-  // Check if already on this plan
+  // Check if already on this plan (and not expired)
   if (subscription.plan === plan && subscription.frequency === frequency) {
-    throw new ApiError(400, "You are already on this plan");
+    const now = new Date();
+    const isExpired = subscription.currentPeriodEnd && subscription.currentPeriodEnd < now;
+    
+    if (!isExpired && subscription.status === "ACTIVE") {
+      throw new ApiError(400, "You are already on this plan. It will renew automatically.");
+    }
   }
 
   // Get amount in paise using service
   const amount = razorpayService.getPlanAmount(plan, frequency);
 
+  // Generate short receipt ID (max 40 chars for Razorpay)
+  const timestamp = Date.now().toString().slice(-10); // Last 10 digits
+  const randomStr = Math.random().toString(36).substring(2, 8); // 6 random chars
+  const receipt = `sub_${timestamp}_${randomStr}`; // ~20 chars total
+
   // Create Razorpay order using service
   const order = await razorpayService.createOrder(
     amount,
     "INR",
-    `order_${userId}_${Date.now()}`,
+    receipt,
     {
       userId,
       plan,
@@ -82,7 +122,7 @@ export const createSubscriptionOrder = asyncHandler(async (req: Request, res: Re
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
-        keyId: process.env.RAZORPAY_KEY_ID,
+        // Don't send key from backend - frontend should use NEXT_PUBLIC_RAZORPAY_KEY_ID
       },
       "Order created successfully"
     )

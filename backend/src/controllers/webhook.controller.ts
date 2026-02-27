@@ -18,6 +18,7 @@ export const handleRazorpayWebhook = asyncHandler(async (req: Request, res: Resp
   const isValid = razorpayService.verifyWebhookSignature(webhookBody, signature);
 
   if (!isValid) {
+    console.error("⚠️ WEBHOOK SIGNATURE VERIFICATION FAILED");
     throw new ApiError(400, "Invalid webhook signature");
   }
 

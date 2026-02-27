@@ -535,7 +535,7 @@ const resetPassword = asyncHandler(async (req: Request<{}, {}, ResetPasswordBody
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
 
-  if (!userId) throw new ApiError(401, "Not Authoorized");
+  if (!userId) throw new ApiError(401, "Not Authorized");
 
   const user = await prisma.user.update({
     where: { id: userId },
@@ -720,6 +720,12 @@ const changePassword = asyncHandler(async (req: Request<{}, {}, ChangePasswordBo
     throw new ApiError(401, "Current password is incorrect");
   }
 
+  // Check if new password is same as current password
+  const isSameAsOld = await comparePassword(newPassword, user.password);
+  if (isSameAsOld) {
+    throw new ApiError(400, "New password cannot be the same as current password");
+  }
+
   const hashedNewPassword = await hashPassword(newPassword);
 
   await prisma.user.update({
@@ -738,16 +744,12 @@ const getUserStats = asyncHandler(async (req: Request, res: Response) => {
 
   if (!userId) throw new ApiError(401, "Not Authorized");
 
-  const [workspacesCount, projectsCreated, projectsWithAccess, tasksCreated, tasksAssigned] = await Promise.all([
+  const [workspacesCount, projectsCount, tasksCount] = await Promise.all([
     // Total workspaces user is member of
     prisma.workspaceMembers.count({
       where: { userId }
     }),
-    // Projects user created
-    prisma.project.count({
-      where: { createdBy: userId }
-    }),
-    // Projects user has access to (through workspace membership)
+    // Projects user has access to (includes created projects)
     prisma.projectAccess.count({
       where: {
         workspaceMember: {
@@ -755,10 +757,6 @@ const getUserStats = asyncHandler(async (req: Request, res: Response) => {
         },
         hasAccess: true
       }
-    }),
-    // Tasks user created
-    prisma.task.count({
-      where: { createdBy: userId }
     }),
     // Tasks assigned to user
     prisma.task.count({
@@ -773,8 +771,8 @@ const getUserStats = asyncHandler(async (req: Request, res: Response) => {
 
   const stats = {
     workspacesCount,
-    projectsCount: projectsCreated + projectsWithAccess,
-    tasksCount: tasksCreated + tasksAssigned,
+    projectsCount,
+    tasksCount,
     lastLogin: user?.lastLogin,
     memberSince: user?.createdAt
   };
