@@ -12,6 +12,7 @@ import {
     joinWorkspaceLimiter, 
     createInviteLimiter 
 } from "../middleware/rateLimiter";
+import { canAddWorkspaceMembers } from "../middleware/subscriptionLimit.middleware";
 
 const router = Router();
 
@@ -22,12 +23,12 @@ router.get("/:workspaceId/join/:inviteToken", inviteLimiter, getInviteDetails);
 // Protected routes - Require authentication
 router.use(verifyJWT);
 
-// Create workspace invite (owner only, with rate limiting)
+// Create workspace invite (owner only, with rate limiting and member limit check)
 // Can send email invite or generate shareable link
-router.post("/:workspaceId/create", isWorkspaceOwner, createInviteLimiter, createWorkspaceInvite);
+router.post("/:workspaceId/create", isWorkspaceOwner, canAddWorkspaceMembers, createInviteLimiter, createWorkspaceInvite);
 
-// Join workspace via invite token (authenticated users only, strict rate limiting)
-router.post("/:workspaceId/join/:inviteToken", joinWorkspaceLimiter, joinWorkspaceViaInvite);
+// Join workspace via invite token (authenticated users only, strict rate limiting, member limit check)
+router.post("/:workspaceId/join/:inviteToken", canAddWorkspaceMembers, joinWorkspaceLimiter, joinWorkspaceViaInvite);
 
 // Reset/revoke invite link (owner only, with rate limiting)
 // Deletes old links and generates new token

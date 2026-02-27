@@ -11,6 +11,7 @@ import {
 } from "../controllers/subscription.controller";
 import { validate } from "../config/validate";
 import { createSubscriptionOrderSchema, verifyPaymentSchema } from "../config/schema";
+import { paymentLimiter } from "../middleware/security";
 
 const router = Router();
 
@@ -26,11 +27,11 @@ router.get("/limits", checkSubscriptionLimits);
 // Get transaction history
 router.get("/history", getSubscriptionHistory);
 
-// Create payment order
-router.post("/create-order", validate(createSubscriptionOrderSchema), createSubscriptionOrder);
+// Create payment order with rate limiting
+router.post("/create-order", paymentLimiter, validate(createSubscriptionOrderSchema), createSubscriptionOrder);
 
-// Verify payment and upgrade
-router.post("/verify-payment", validate(verifyPaymentSchema), verifyPaymentAndUpgrade);
+// Verify payment and upgrade with rate limiting
+router.post("/verify-payment", paymentLimiter, validate(verifyPaymentSchema), verifyPaymentAndUpgrade);
 
 // Cancel subscription
 router.post("/cancel", cancelSubscription);

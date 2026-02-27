@@ -28,25 +28,26 @@ import {
   deleteAccount
 } from "../controllers/user.controller";
 import { verifyJWT } from "../middleware/auth.middleware";
+import { authLimiter, passwordResetLimiter } from "../middleware/security";
 
 const router = Router();
 
-//public route
-router.post("/register", validate(registerSchema), registerUser);
+//public route with rate limiting
+router.post("/register", authLimiter, validate(registerSchema), registerUser);
 
 router.get("/verify-email", verifyEmail);
 
 router.post("/resend-verifylink", resendVerification);
 
-router.post("/login", validate(loginSchema), loginUser);
+router.post("/login", authLimiter, validate(loginSchema), loginUser);
 
-router.post("/verify-2fa", verify2FA);
+router.post("/verify-2fa", authLimiter, verify2FA);
 
-router.post("/forgot-password", sendPassResetOtp);
+router.post("/forgot-password", passwordResetLimiter, sendPassResetOtp);
 
-router.post("/verify-otp", verifyOtp);
+router.post("/verify-otp", passwordResetLimiter, verifyOtp);
 
-router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
+router.post("/reset-password", passwordResetLimiter, validate(resetPasswordSchema), resetPassword);
 
 router.post("/refresh-token", refreshAccessToken);
 
