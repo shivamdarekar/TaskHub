@@ -8,6 +8,7 @@ import taskReducer from "./slices/taskSlice"
 import commentReducer from "./slices/commentSlice"
 import documentationReducer from "./slices/documentationSlice"
 import inviteReducer from "./slices/inviteMemberSlice"
+import subscriptionReducer from "./slices/subscriptionSlice"
 
 // Create storage that works with SSR
 let storage;
@@ -44,6 +45,7 @@ const rootReducer = combineReducers({
   comment: commentReducer,
   documentation: persistReducer(documentationPersistConfig, documentationReducer),
   invite: inviteReducer,
+  subscription: subscriptionReducer,
 });
 
 export const store = configureStore({
