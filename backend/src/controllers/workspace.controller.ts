@@ -157,13 +157,15 @@ const getWorkspaceMembers = asyncHandler(async(req:Request,res:Response) => {
     const members = await prisma.workspaceMembers.findMany({
         where:{workspaceId},
         orderBy:{createdAt: "desc"},
-        include:{
+        select:{
+            id: true,
+            accessLevel: true,
+            createdAt: true,
             User:{
                 select:{
                     id:true,
                     name:true,
                     email:true,
-                    profilePicture:true
                 }
             }
         }
@@ -176,7 +178,6 @@ const getWorkspaceMembers = asyncHandler(async(req:Request,res:Response) => {
             id: m.User.id,
             name: m.User.name,
             email: m.User.email,
-            profilePicture: m.User.profilePicture,
         },
         accessLevel: m.accessLevel,
         createdAt: m.createdAt,
