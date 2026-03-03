@@ -4,8 +4,8 @@ import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/apiResponse";
 import prisma from "../config/prisma";
 import razorpayService, { PLAN_LIMITS } from "../services/razorpay.service";
-import { SubscriptionPlan, SubscriptionStatus } from "@prisma/client";
-import { sendSubscriptionConfirmationEmail } from "../services/subscriptionEmail";
+import { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@prisma/client";
+import { sendSubscriptionConfirmationEmail, sendPaymentFailedEmail, sendSubscriptionCancelledEmail } from "../services/subscriptionEmail";
 
 // Get current user subscription
 export const getCurrentSubscription = asyncHandler(async (req: Request, res: Response) => {
@@ -181,24 +181,54 @@ export const verifyPaymentAndUpgrade = asyncHandler(async (req: Request, res: Re
   // Fetch payment details using service
   const payment = await razorpayService.getPayment(razorpay_payment_id);
 
-  if (payment.status !== "captured") {
-    throw new ApiError(400, "Payment not captured");
-  }
-
-  // Get subscription
+  // Get subscription and user details first
   const subscription = await prisma.subscription.findUnique({
     where: { userId },
   });
 
   if (!subscription) throw new ApiError(404, "Subscription not found");
 
-  // Get user details for email
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { email: true, name: true },
   });
 
   if (!user) throw new ApiError(404, "User not found");
+
+  // Handle failed payment
+  if (payment.status === "failed") {
+    // Create failed transaction record
+    const failedTransaction = await prisma.transaction.create({
+      data: {
+        subscriptionId: subscription.id,
+        razorpayPaymentId: razorpay_payment_id,
+        razorpayOrderId: razorpay_order_id,
+        razorpaySignature: razorpay_signature,
+        amount: Number(payment.amount) / 100,
+        currency: payment.currency,
+        status: "FAILED" as PaymentStatus,
+        plan: plan as SubscriptionPlan,
+        frequency,
+        paymentMethod: payment.method || "card",
+        email: payment.email || user.email,
+        contact: payment.contact ? String(payment.contact) : null,
+      },
+    });
+
+    // Send payment failed email immediately
+    sendPaymentFailedEmail(
+      user.email,
+      user.name,
+      plan,
+      payment.error_description || "Payment was declined by your bank"
+    ).catch(err => console.error('Failed to send payment failure email:', err));
+
+    throw new ApiError(400, `Payment failed: ${payment.error_description || "Payment not captured"}`);
+  }
+
+  if (payment.status !== "captured") {
+    throw new ApiError(400, "Payment not captured");
+  }
 
   // Calculate period dates
   const currentPeriodStart = new Date();
@@ -297,10 +327,29 @@ export const cancelSubscription = asyncHandler(async (req: Request, res: Respons
     throw new ApiError(400, "Subscription is already scheduled for cancellation");
   }
 
+  // Get user details for email
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true },
+  });
+
+  if (!user) throw new ApiError(404, "User not found");
+
   const updatedSubscription = await prisma.subscription.update({
     where: { userId },
     data: { cancelAtPeriodEnd: true },
   });
+
+  // Send cancellation email immediately
+  const expiryDate = updatedSubscription.currentPeriodEnd || new Date();
+  sendSubscriptionCancelledEmail(
+    user.email,
+    user.name,
+    updatedSubscription.plan,
+    expiryDate
+  ).catch(err => console.error('❌ Failed to send cancellation email:', err));
+
+  console.log(`📧 Sending cancellation email to ${user.email}`);
 
   return res.status(200).json(
     new ApiResponse(

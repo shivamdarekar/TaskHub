@@ -51,7 +51,7 @@ async function handlePaymentCaptured(payment: any) {
 }
 
 async function handlePaymentFailed(payment: any) {
-  console.log("Payment failed:", payment.id);
+  console.log("💳 Payment failed:", payment.id);
   
   // Find transaction and update status
   const transaction = await prisma.transaction.findUnique({
@@ -68,25 +68,32 @@ async function handlePaymentFailed(payment: any) {
   });
 
   if (transaction) {
-    await prisma.transaction.update({
-      where: { id: transaction.id },
-      data: { status: "FAILED" as PaymentStatus },
-    });
+    // Update transaction status if not already failed
+    if (transaction.status !== "FAILED") {
+      await prisma.transaction.update({
+        where: { id: transaction.id },
+        data: { status: "FAILED" as PaymentStatus },
+      });
+    }
 
     // Send failure email (async, don't block)
     if (transaction.subscription?.user) {
+      console.log(`📧 Sending payment failed email to ${transaction.subscription.user.email}`);
       sendPaymentFailedEmail(
         transaction.subscription.user.email,
         transaction.subscription.user.name,
         transaction.plan,
         payment.error_description || "Payment was declined by your bank"
-      ).catch(err => console.error('Failed to send payment failure email:', err));
+      ).catch(err => console.error('❌ Failed to send payment failure email:', err));
     }
+  } else {
+    console.error(`⚠️ Transaction not found for failed payment: ${payment.id}`);
+    console.error(`Payment details:`, JSON.stringify(payment, null, 2));
   }
 }
 
 async function handleSubscriptionCancelled(subscription: any) {
-  console.log("Subscription cancelled:", subscription.id);
+  console.log("🚫 Subscription cancelled:", subscription.id);
   
   // Find subscription by razorpaySubscriptionId
   const sub = await prisma.subscription.findFirst({
@@ -126,12 +133,15 @@ async function handleSubscriptionCancelled(subscription: any) {
 
     // Send cancellation email (async, don't block)
     if (sub.user) {
+      console.log(`📧 Sending cancellation email to ${sub.user.email}`);
       sendSubscriptionCancelledEmail(
         sub.user.email,
         sub.user.name,
         previousPlan,
         expiryDate
-      ).catch(err => console.error('Failed to send cancellation email:', err));
+      ).catch(err => console.error('❌ Failed to send cancellation email:', err));
     }
+  } else {
+    console.error(`⚠️ Subscription not found for razorpay subscription: ${subscription.id}`);
   }
 }
