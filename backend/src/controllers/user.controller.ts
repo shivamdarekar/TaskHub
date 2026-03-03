@@ -738,18 +738,23 @@ const changePassword = asyncHandler(async (req: Request<{}, {}, ChangePasswordBo
   );
 });
 
-//get user stats
+//get user stats - optimized with parallel queries
 const getUserStats = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
 
-  const [workspacesCount, projectsCount, tasksCount] = await Promise.all([
+  // Use Promise.all for parallel queries - faster than sequential
+  const [workspacesCount, tasksCount, projectsCount, user] = await Promise.all([
     // Total workspaces user is member of
     prisma.workspaceMembers.count({
       where: { userId }
     }),
-    // Projects user has access to (includes created projects)
+    // Tasks assigned to user
+    prisma.task.count({
+      where: { assigneeId: userId }
+    }),
+    // Projects user has access to
     prisma.projectAccess.count({
       where: {
         workspaceMember: {
@@ -758,23 +763,21 @@ const getUserStats = asyncHandler(async (req: Request, res: Response) => {
         hasAccess: true
       }
     }),
-    // Tasks assigned to user
-    prisma.task.count({
-      where: { assigneeId: userId }
+    // User details
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { lastLogin: true, createdAt: true }
     })
   ]);
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { lastLogin: true, createdAt: true }
-  });
+  if (!user) throw new ApiError(404, "User not found");
 
   const stats = {
     workspacesCount,
     projectsCount,
     tasksCount,
-    lastLogin: user?.lastLogin,
-    memberSince: user?.createdAt
+    lastLogin: user.lastLogin,
+    memberSince: user.createdAt
   };
 
   return res.status(200).json(

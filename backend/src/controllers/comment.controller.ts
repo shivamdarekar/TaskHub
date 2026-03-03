@@ -82,9 +82,13 @@ export const getProjectComments = asyncHandler(async (req: Request, res: Respons
     const [comments, total] = await prisma.$transaction([
         prisma.comment.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
                 user: {
-                    select: { id: true, name: true, email: true },
+                    select: { id: true, name: true },
                 },
                 task: {
                     select: { id: true, title: true },
@@ -165,13 +169,15 @@ export const getTaskComments = asyncHandler(async (req: Request, res: Response) 
 
     const comments = await prisma.comment.findMany({
         where: { taskId },
-        include: {
+        select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
             user: {
                 select: {
                     id: true,
                     name: true,
-                    email: true,
-                    profilePicture: true,
                 },
             },
         },
@@ -209,13 +215,15 @@ export const updateComment = asyncHandler(async (req: Request, res: Response) =>
     const comment = await prisma.comment.update({
         where: { id: commentId },
         data: { content: content.trim() },
-        include: {
+        select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
             user: {
                 select: {
                     id: true,
                     name: true,
-                    email: true,
-                    profilePicture: true,
                 },
             },
         },

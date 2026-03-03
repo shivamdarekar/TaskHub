@@ -68,6 +68,10 @@ export interface Task {
     project?: Project;
     comments?: Comment[];
     attachments?: Attachment[];
+    _count?: {
+        comments: number;
+        attachments: number;
+    };
 }
 
 interface TaskState {

@@ -66,37 +66,39 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
         if (!assigneeAccess) throw new ApiError(400, "Assignee doesn't have access to this project");
     }
 
-    //get last position
-    const lastTask = await prisma.task.findFirst({
-        where: { projectId },
-        orderBy: { position: "desc" },
-        select: { position: true },
-    });
+    //get last position and create task in transaction to prevent race condition
+    const task = await prisma.$transaction(async (tx) => {
+        const lastTask = await tx.task.findFirst({
+            where: { projectId },
+            orderBy: { position: "desc" },
+            select: { position: true },
+        });
 
-    const task = await prisma.task.create({
-        data: {
-            title: title.trim(),
-            description: description?.trim() || null,
-            status: status || TaskStatus.TODO,
-            priority: priority || TaskPriority.LOW,
-            startDate: startDate ? new Date(startDate) : null,
-            dueDate: dueDate ? new Date(dueDate) : null,
-            projectId,
-            createdBy: userId,
-            assigneeId: assigneeId || null,
-            position: (lastTask?.position || 0) + 1
-        },
-        include: {
-            creator: {
-                select: { id: true, name: true, email: true },
+        return await tx.task.create({
+            data: {
+                title: title.trim(),
+                description: description?.trim() || null,
+                status: status || TaskStatus.TODO,
+                priority: priority || TaskPriority.LOW,
+                startDate: startDate ? new Date(startDate) : null,
+                dueDate: dueDate ? new Date(dueDate) : null,
+                projectId,
+                createdBy: userId,
+                assigneeId: assigneeId || null,
+                position: (lastTask?.position || 0) + 1
             },
-            assignedTo: {
-                select: { id: true, name: true, email: true }
-            },
-            project: {
-                select: { id: true, name: true }
+            include: {
+                creator: {
+                    select: { id: true, name: true, email: true },
+                },
+                assignedTo: {
+                    select: { id: true, name: true, email: true }
+                },
+                project: {
+                    select: { id: true, name: true }
+                }
             }
-        }
+        });
     });
 
     if (!task) throw new ApiError(403, "Failed to create task");
@@ -126,7 +128,18 @@ export const getTaskById = asyncHandler(async (req: Request, res: Response) => {
 
     const fullTask = await prisma.task.findUnique({
         where: { id: taskId },
-        include: {
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            position: true,
+            startDate: true,
+            dueDate: true,
+            documentation: true,
+            createdAt: true,
+            updatedAt: true,
             creator: {
                 select: { id: true, name: true, email: true },
             },
@@ -143,16 +156,11 @@ export const getTaskById = asyncHandler(async (req: Request, res: Response) => {
                     }
                 }
             },
-            comments: {
-                include: {
-                    user: {
-                        select: { id: true, name: true, email: true }
-                    }
-                },
-                orderBy: { createdAt: 'desc' }
-            },
-            attachments: {
-                orderBy: { createdAt: 'desc' }
+            _count: {
+                select: {
+                    comments: true,
+                    attachments: true
+                }
             }
         }
     });
@@ -200,12 +208,31 @@ export const getProjectTasks = asyncHandler(async (req: Request, res: Response) 
     const [tasks, total] = await prisma.$transaction([
         prisma.task.findMany({
             where: filters,
-            include: {
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                priority: true,
+                startDate: true,
+                dueDate: true,
+                position: true,
+                projectId: true,
+                createdBy: true,
+                assigneeId: true,
+                createdAt: true,
+                updatedAt: true,
                 creator: {
                     select: { id: true, name: true, email: true },
                 },
                 assignedTo: {
                     select: { id: true, name: true }
+                },
+                _count: {
+                    select: {
+                        comments: true,
+                        attachments: true
+                    }
                 }
             },
             orderBy: {
@@ -416,6 +443,7 @@ export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) =
         select: { id: true, name: true },
       },
       dueDate: true,
+      createdAt: true,
     },
   });
 

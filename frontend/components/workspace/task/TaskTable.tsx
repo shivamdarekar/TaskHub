@@ -226,7 +226,7 @@ export default function TaskTable({
                     <TableCell>
                       <div className="flex items-center gap-1 text-gray-600">
                         <Paperclip className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="text-xs md:text-sm">{task.attachments?.length || 0}</span>
+                        <span className="text-xs md:text-sm">{task._count?.attachments ?? task.attachments?.length ?? 0}</span>
                       </div>
                     </TableCell>
                   )}

@@ -233,66 +233,79 @@ export const getProjectOverview = asyncHandler(
 
         if (!projectId) throw new ApiError(401, "ProjectId is required");
 
-        // Optimize query: limit tasks to avoid N+1 problem, use _count for totals
-        const project = await prisma.project.findUnique({
-            where: { id: projectId },
-            select: {
-                tasks: {
-                    select: {
-                        id: true,
-                        status: true,
-                        priority: true,
-                        dueDate: true,
-                        createdAt: true,
-                        assigneeId: true,
+        // Use aggregation instead of loading all tasks - much more efficient
+        const [project, statusCounts, priorityCounts, overdueCount] = await prisma.$transaction([
+            // Get basic project info and counts
+            prisma.project.findUnique({
+                where: { id: projectId },
+                select: {
+                    _count: {
+                        select: {
+                            comments: true,
+                            files: true,
+                            tasks: true,
+                        },
                     },
-                    take: 100
-                },
-                projectAccess: {
-                    where: { hasAccess: true },
-                    select: { id: true },
-                },
-                _count: {
-                    select: {
-                        comments: true,
-                        files: true,
-                        activities: true,
-                        tasks: true,  // Use _count for total count
+                    projectAccess: {
+                        where: { hasAccess: true },
+                        select: { id: true },
                     },
                 },
-            },
+            }),
+            
+            // Get counts by status using groupBy
+            prisma.task.groupBy({
+                by: ['status'],
+                where: { projectId },
+                _count: { status: true }
+            }),
+            
+            // Get counts by priority using groupBy
+            prisma.task.groupBy({
+                by: ['priority'],
+                where: { projectId },
+                _count: { priority: true }
+            }),
+            
+            // Get overdue count
+            prisma.task.count({
+                where: {
+                    projectId,
+                    dueDate: { lt: new Date() },
+                    status: { not: "COMPLETED" }
+                }
+            })
+        ]);
+
+        if (!project) throw new ApiError(404, "Project not found");
+
+        // Transform aggregated data into expected format
+        const tasksByStatus = {
+            TODO: 0,
+            IN_PROGRESS: 0,
+            IN_REVIEW: 0,
+            COMPLETED: 0,
+            BACKLOG: 0,
+        };
+        statusCounts.forEach(s => {
+            tasksByStatus[s.status] = s._count.status;
         });
 
-        if (!project) {
-            throw new ApiError(404, "Project not found");
-        }
-
-        // Calculate statistics from loaded tasks (up to 100)
-        const total = project._count.tasks;
-        const completed = project.tasks.filter(t => t.status === "COMPLETED").length;
-        const overdue = project.tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
-
-        const tasksByStatus = {
-            TODO: project.tasks.filter(t => t.status === "TODO").length,
-            IN_PROGRESS: project.tasks.filter(t => t.status === "IN_PROGRESS").length,
-            IN_REVIEW: project.tasks.filter(t => t.status === "IN_REVIEW").length,
-            COMPLETED: completed,
-            BACKLOG: project.tasks.filter(t => t.status === "BACKLOG").length,
-        };
-
         const tasksByPriority = {
-            LOW: project.tasks.filter(t => t.priority === "LOW").length,
-            MEDIUM: project.tasks.filter(t => t.priority === "MEDIUM").length,
-            HIGH: project.tasks.filter(t => t.priority === "HIGH").length,
-            CRITICAL: project.tasks.filter(t => t.priority === "CRITICAL").length,
+            LOW: 0,
+            MEDIUM: 0,
+            HIGH: 0,
+            CRITICAL: 0,
         };
-
+        priorityCounts.forEach(p => {
+            tasksByPriority[p.priority] = p._count.priority;
+        });
 
         return res.status(200).json(new ApiResponse(200, {
             stats: {
-                totalTasks: total,
-                completedTasks: completed,
-                overdueTasks: overdue,
+                totalTasks: project._count.tasks,
+                completedTasks: tasksByStatus.COMPLETED,
+                overdueTasks: overdueCount,
                 totalComments: project._count.comments,
                 totalFiles: project._count.files,
                 totalMembers: project.projectAccess.length,
@@ -406,15 +419,17 @@ export const getProjectMembers = asyncHandler(
                 projectId,
                 hasAccess: true,
             },
-            include: {
+            select: {
+                workspaceMemberId: true,
+                createdAt: true,
                 workspaceMember: {
-                    include: {
+                    select: {
+                        accessLevel: true,
                         User: {
                             select: {
                                 id: true,
                                 name: true,
                                 email: true,
-                                lastLogin: true
                             }
                         }
                     }
@@ -430,7 +445,6 @@ export const getProjectMembers = asyncHandler(
             userId: access.workspaceMember.User.id,
             name: access.workspaceMember.User.name,
             email: access.workspaceMember.User.email,
-            lastLogin: access.workspaceMember.User.lastLogin,
             accessLevel: access.workspaceMember.accessLevel,
             joinedAt: access.createdAt,
         }));
