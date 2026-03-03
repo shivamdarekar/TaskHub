@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Check, Users, Layers, BarChart3, ArrowRight } from "lucide-react";
+import { Check, Users, Layers, BarChart3, ArrowRight, Shield, Bell, FileText, MessageSquare, Zap, Lock, TrendingUp, Clock, Target } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -128,48 +128,268 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 animate-fade-in-up">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Essential features for personal success
+              Powerful Features for Modern Teams
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Everything you need to simplify your projects and boost productivity
+              Everything you need to manage projects efficiently
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all transform hover:-translate-y-1 animate-fade-in-up">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                Seamless Collaboration
-              </h3>
-              <p className="text-gray-600">
-                Empower your projects with real-time updates and efficient project tracking when working with others.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-purple-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-200">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
                 <Layers className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">
-                All-in-One Solution
+                Kanban Boards
               </h3>
               <p className="text-gray-600">
-                Manage everything from tasks to goals in one integrated workspace designed to boost productivity.
+                Visualize your workflow with drag-and-drop Kanban boards. Organize tasks across customizable columns.
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-400">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-purple-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-100">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Team Collaboration
+              </h3>
+              <p className="text-gray-600">
+                Invite team members, assign tasks, and collaborate in real-time with role-based permissions.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-200">
               <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <MessageSquare className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Comments & Discussions
+              </h3>
+              <p className="text-gray-600">
+                Keep conversations organized with task-level comments and threaded discussions.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-green-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-300">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Documentation System
+              </h3>
+              <p className="text-gray-600">
+                Create and manage project documentation with a built-in rich text editor.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-orange-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-400">
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <Bell className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Smart Notifications
+              </h3>
+              <p className="text-gray-600">
+                Stay updated with email notifications for task assignments, comments, and project updates.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-red-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-500">
+              <div className="bg-gradient-to-br from-red-500 to-red-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Advanced Security
+              </h3>
+              <p className="text-gray-600">
+                Two-factor authentication, role-based access control, and secure data encryption.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-teal-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-600">
+              <div className="bg-gradient-to-br from-teal-500 to-teal-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Activity Tracking
+              </h3>
+              <p className="text-gray-600">
+                Monitor all project activities with detailed logs and track who did what and when.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-pink-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-700">
+              <div className="bg-gradient-to-br from-pink-500 to-pink-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">
-                Customizable Workflow
+                Progress Analytics
               </h3>
               <p className="text-gray-600">
-                Personalize your workspace with flexible tools designed to match your unique work style.
+                Visualize project progress with charts, timelines, and comprehensive dashboard insights.
               </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-cyan-200 transition-all transform hover:-translate-y-1 animate-fade-in-up animation-delay-800">
+              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 w-12 h-12 rounded-lg flex items-center justify-center mb-5 shadow-lg">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Multiple Workspaces
+              </h3>
+              <p className="text-gray-600">
+                Organize different projects into separate workspaces with independent teams and settings.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+              How It Works
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Get started in minutes with our simple workflow
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-2xl font-bold text-white">1</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Create Workspace</h3>
+              <p className="text-gray-600">Sign up and create your first workspace in seconds</p>
+            </div>
+
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Add Projects & Tasks</h3>
+              <p className="text-gray-600">Organize your work with projects and break them into tasks</p>
+            </div>
+
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Invite Your Team</h3>
+              <p className="text-gray-600">Collaborate by inviting team members to your workspace</p>
+            </div>
+
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-2xl font-bold text-white">4</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Track Progress</h3>
+              <p className="text-gray-600">Monitor tasks, analyze performance, and achieve goals</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose TaskHub Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+              Why Choose TaskHub?
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Built for teams who value simplicity and productivity
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-blue-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Lightning Fast</h3>
+                  <p className="text-gray-600">Built with modern technology for instant updates and seamless performance</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                    <Lock className="h-6 w-6 text-purple-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Secure & Private</h3>
+                  <p className="text-gray-600">Enterprise-grade security with 2FA, encryption, and role-based access control</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Scalable Solution</h3>
+                  <p className="text-gray-600">Start free and scale as you grow - from solo projects to enterprise teams</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                    <Target className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Focus on What Matters</h3>
+                  <p className="text-gray-600">No bloat, no complexity - just the essential tools you need to get work done</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl">
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">Setup Time</span>
+                    <span className="text-blue-600 font-bold">2 minutes</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{width: '95%'}}></div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">User Satisfaction</span>
+                    <span className="text-green-600 font-bold">98%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{width: '98%'}}></div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">Productivity Boost</span>
+                    <span className="text-purple-600 font-bold">3x</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-purple-600 h-2 rounded-full" style={{width: '100%'}}></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -317,7 +537,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="bg-white py-20 px-4 sm:px-6 lg:px-8">
+      <section id="faq" className="bg-gradient-to-b from-white to-gray-50 py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-10 animate-fade-in-up">
             Frequently Asked Questions
@@ -361,6 +581,53 @@ export default function Home() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            Ready to Transform Your Workflow?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Join thousands of teams already using TaskHub to achieve more
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {isAuthenticated ? (
+              <Button 
+                size="lg" 
+                onClick={handleGoToWorkspace}
+                disabled={loading}
+                className="bg-white text-blue-600 hover:bg-gray-100 px-8 shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Go to Workspace"
+                )}
+              </Button>
+            ) : (
+              <>
+                <Link href="/register">
+                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button size="lg" variant="outline" className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-all">
+                    Contact Sales
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+          <p className="mt-6 text-blue-100 text-sm">
+            No credit card required • Free plan available • Cancel anytime
+          </p>
         </div>
       </section>
     </div>
