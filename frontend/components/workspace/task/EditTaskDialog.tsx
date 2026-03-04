@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAppDispatch } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { updateTask, TaskStatus, TaskPriority, Task, getKanbanTasks } from "@/redux/slices/taskSlice";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +19,7 @@ interface EditTaskDialogProps {
 
 export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated }: EditTaskDialogProps) {
   const dispatch = useAppDispatch();
+  const { members } = useAppSelector((state) => state.project);
   
   const [formData, setFormData] = useState({
     title: task.title,
@@ -26,6 +27,7 @@ export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated
     status: task.status,
     priority: task.priority,
     dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
+    assigneeId: task.assigneeId || "unassigned",
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +51,7 @@ export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated
         status: formData.status,
         priority: formData.priority,
         dueDate: formData.dueDate || undefined,
+        assigneeId: formData.assigneeId === "unassigned" ? undefined : formData.assigneeId,
       })).unwrap();
       
       // Refresh kanban board if status changed
@@ -94,6 +97,26 @@ export default function EditTaskDialog({ task, open, onOpenChange, onTaskUpdated
               placeholder="Enter task description"
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="assignee">Assignee</Label>
+            <Select
+              value={formData.assigneeId}
+              onValueChange={(value: string) => setFormData(prev => ({ ...prev, assigneeId: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {members?.map((member) => (
+                  <SelectItem key={member.userId} value={member.userId}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
