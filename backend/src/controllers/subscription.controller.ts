@@ -450,8 +450,8 @@ export const checkSubscriptionLimits = asyncHandler(async (req: Request, res: Re
 
   // Get current usage
   const [workspacesCount, tasksCount, projectsCount] = await Promise.all([
-    prisma.workspaceMembers.count({
-      where: { userId },
+    prisma.workSpace.count({
+      where: { ownerId: userId },
     }),
     prisma.task.count({
       where: { createdBy: userId },

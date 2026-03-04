@@ -299,6 +299,12 @@ const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserBody>, res: 
     );
   }
 
+  //update last login timestamp
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date() }
+  });
+
   //generate tokens 
   const { accessToken, refreshToken } = await generateTokens(user.id);
 
