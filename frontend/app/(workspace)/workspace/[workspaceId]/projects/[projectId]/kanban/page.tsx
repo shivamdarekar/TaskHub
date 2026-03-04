@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { getKanbanTasks, moveTaskKanban, TaskStatus } from "@/redux/slices/taskSlice";
+import { getKanbanTasks, moveTaskKanban, moveTaskKanbanOptimistic, TaskStatus } from "@/redux/slices/taskSlice";
 import KanbanBoard from "@/components/workspace/kanban/KanbanBoard";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,18 +25,26 @@ export default function KanbanPage() {
   }, [projectId, view, dispatch]);
 
   const handleTaskMove = async (taskId: string, toStatus: string, toPosition: number) => {
+    // Optimistically update UI immediately for instant feedback
+    dispatch(moveTaskKanbanOptimistic({
+      projectId,
+      taskId,
+      toStatus: toStatus as TaskStatus,
+      toPosition
+    }));
+
     try {
+      // Then make the API call in the background
       await dispatch(moveTaskKanban({
         projectId,
         taskId,
         toStatus: toStatus as TaskStatus,
         toPosition
       })).unwrap();
-      
-      // Refetch kanban tasks to get updated positions
-      dispatch(getKanbanTasks({ projectId, view }));
     } catch (error) {
       console.error("Failed to move task:", error);
+      // Revert optimistic update by refetching server state
+      dispatch(getKanbanTasks({ projectId, view }));
     }
   };
 

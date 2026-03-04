@@ -55,11 +55,23 @@ export default function CalendarPage() {
   };
 
   const getTasksForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Get date components in local timezone to avoid UTC conversion issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     return calendarTasks.filter(task => {
       if (!task.dueDate) return false;
-      const taskDate = new Date(task.dueDate).toISOString().split('T')[0];
-      return taskDate === dateStr;
+      
+      // Parse task due date and get components in local timezone
+      const taskDate = new Date(task.dueDate);
+      const taskYear = taskDate.getFullYear();
+      const taskMonth = String(taskDate.getMonth() + 1).padStart(2, '0');
+      const taskDay = String(taskDate.getDate()).padStart(2, '0');
+      const taskDateStr = `${taskYear}-${taskMonth}-${taskDay}`;
+      
+      return taskDateStr === dateStr;
     });
   };
 

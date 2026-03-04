@@ -370,6 +370,37 @@ const taskSlice = createSlice({
                 state.currentTask.status = action.payload.status;
             }
         },
+        // Optimistic update for kanban task move
+        moveTaskKanbanOptimistic: (state, action: PayloadAction<MoveTaskKanbanData>) => {
+            if (!state.kanbanTasks) return;
+            
+            const { taskId, toStatus, toPosition } = action.payload;
+            
+            // Find the task in all columns
+            let movedTask: Task | undefined;
+            let fromStatus: TaskStatus | undefined;
+            
+            for (const [status, tasks] of Object.entries(state.kanbanTasks)) {
+                const taskIndex = tasks.findIndex(t => t.id === taskId);
+                if (taskIndex !== -1) {
+                    movedTask = tasks[taskIndex];
+                    fromStatus = status as TaskStatus;
+                    // Remove from old column
+                    state.kanbanTasks[fromStatus] = tasks.filter(t => t.id !== taskId);
+                    break;
+                }
+            }
+            
+            if (!movedTask) return;
+            
+            // Update task status
+            movedTask.status = toStatus;
+            
+            // Add to new column at specified position
+            const targetColumn = state.kanbanTasks[toStatus] || [];
+            targetColumn.splice(toPosition, 0, movedTask);
+            state.kanbanTasks[toStatus] = targetColumn;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -526,6 +557,7 @@ export const {
     clearTasks,
     clearKanbanTasks,
     updateTaskStatusOptimistic,
+    moveTaskKanbanOptimistic,
 } = taskSlice.actions;
 
 export default taskSlice.reducer;
