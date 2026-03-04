@@ -50,9 +50,13 @@ export const canCreateWorkspace = asyncHandler(
     });
 
     if (workspacesCount >= subscription.maxWorkspaces) {
+      const workspaceWord = subscription.maxWorkspaces === 1 ? 'workspace' : 'workspaces';
+      const deleteCount = workspacesCount - subscription.maxWorkspaces + 1;
+      const deleteWord = deleteCount === 1 ? 'workspace' : 'workspaces';
+      
       throw new ApiError(
         403,
-        `You have ${workspacesCount} workspaces but your ${subscription.plan} plan allows ${subscription.maxWorkspaces}. Upgrade to create more or delete ${workspacesCount - subscription.maxWorkspaces + 1} workspace(s).`
+        `You've reached your workspace limit (${workspacesCount}/${subscription.maxWorkspaces} ${workspaceWord}). Upgrade your ${subscription.plan} plan to create more workspaces, or delete ${deleteCount} ${deleteWord} first.`
       );
     }
 
@@ -107,9 +111,13 @@ export const canCreateProject = asyncHandler(
     });
 
     if (projectsCount >= subscription.maxProjects) {
+      const projectWord = subscription.maxProjects === 1 ? 'project' : 'projects';
+      const deleteCount = projectsCount - subscription.maxProjects + 1;
+      const deleteWord = deleteCount === 1 ? 'project' : 'projects';
+      
       throw new ApiError(
         403,
-        `You have ${projectsCount} projects but your ${subscription.plan} plan allows ${subscription.maxProjects}. Upgrade to create more or delete ${projectsCount - subscription.maxProjects + 1} project(s).`
+        `You've reached your project limit (${projectsCount}/${subscription.maxProjects} ${projectWord}). Upgrade your ${subscription.plan} plan to create more projects, or delete ${deleteCount} ${deleteWord} first.`
       );
     }
 
@@ -164,9 +172,13 @@ export const canCreateTask = asyncHandler(
     });
 
     if (tasksCount >= subscription.maxTasks) {
+      const taskWord = subscription.maxTasks === 1 ? 'task' : 'tasks';
+      const deleteCount = tasksCount - subscription.maxTasks + 1;
+      const deleteWord = deleteCount === 1 ? 'task' : 'tasks';
+      
       throw new ApiError(
         403,
-        `You have ${tasksCount} tasks but your ${subscription.plan} plan allows ${subscription.maxTasks}. Upgrade to create more or delete ${tasksCount - subscription.maxTasks + 1} task(s).`
+        `You've reached your task limit (${tasksCount}/${subscription.maxTasks} ${taskWord}). Upgrade your ${subscription.plan} plan to create more tasks, or delete ${deleteCount} ${deleteWord} first.`
       );
     }
 
@@ -232,9 +244,13 @@ export const canAddWorkspaceMembers = asyncHandler(
     });
 
     if (membersCount >= subscription.maxMembers) {
+      const memberWord = subscription.maxMembers === 1 ? 'member' : 'members';
+      const removeCount = membersCount - subscription.maxMembers + 1;
+      const removeWord = removeCount === 1 ? 'member' : 'members';
+      
       throw new ApiError(
         403,
-        `This workspace has ${membersCount} members but the owner's ${subscription.plan} plan allows ${subscription.maxMembers}. The workspace owner needs to upgrade their plan or remove ${membersCount - subscription.maxMembers + 1} member(s).`
+        `This workspace has reached its member limit (${membersCount}/${subscription.maxMembers} ${memberWord}). The workspace owner needs to upgrade their ${subscription.plan} plan or remove ${removeCount} ${removeWord} first.`
       );
     }
 
