@@ -51,6 +51,8 @@ model WorkSpace {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
 }
 
 enum AccessLevel {
@@ -76,6 +78,7 @@ model WorkspaceMembers {
   @@unique([userId, workspaceId])
   @@index([userId])
   @@index([workspaceId])
+  @@index([workspaceId, createdAt])
 }
 
 model Project {
@@ -96,6 +99,8 @@ model Project {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
+  @@index([createdBy])
+  @@index([workspaceId, createdAt])
   @@index([workspaceId])
 }
 
@@ -112,6 +117,7 @@ model ProjectAccess {
   updatedAt DateTime @updatedAt
 
   @@unique([workspaceMemberId, projectId])
+  @@index([projectId, hasAccess])
   @@index([workspaceMemberId])
   @@index([projectId])
 }
@@ -158,6 +164,13 @@ model Task {
 
   @@index([projectId])
   @@index([assigneeId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([dueDate])
+  @@index([priority])
+  @@index([projectId, status])
+  @@index([projectId, createdAt])
+  @@index([dueDate, status])
 }
 
 model Activity {
@@ -174,6 +187,8 @@ model Activity {
 
   @@index([projectId])
   @@index([userId])
+  @@index([createdAt])
+  @@index([projectId, createdAt])
 }
 
 model Comment {
@@ -189,7 +204,9 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+  @@index([taskId])
   @@index([userId])
+  @@index([taskId, createdAt])
 }
 
 model Documentation {
