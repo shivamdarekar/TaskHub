@@ -166,7 +166,6 @@ export const getRecentProjectComments = asyncHandler(
 
 // GET ALL COMMENTS FOR A SPECIFIC TASK (for task detail page)
 export const getTaskComments = asyncHandler(async (req: Request, res: Response) => {
-    const start = Date.now();
     const { taskId } = req.params;
     const userId = req.user?.id;
 
@@ -178,7 +177,6 @@ export const getTaskComments = asyncHandler(async (req: Request, res: Response) 
     const cachedComments = await getCache(cacheKey);
     
     if (cachedComments) {
-        console.log(`✅ CACHE HIT ⚡ [getTaskComments] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
         return res.status(200).json(
             new ApiResponse(200, cachedComments, "Task comments retrieved successfully")
         );
@@ -205,7 +203,6 @@ export const getTaskComments = asyncHandler(async (req: Request, res: Response) 
 
     // Cache for 3 minutes
     await setCache(cacheKey, responseData, CacheTTL.SHORT * 3);
-    console.log(`❌ CACHE MISS 🐢 [getTaskComments] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
     return res.status(200).json(
         new ApiResponse(200, responseData, "Task comments retrieved successfully")

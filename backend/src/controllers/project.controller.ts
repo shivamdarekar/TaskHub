@@ -157,7 +157,6 @@ export const getProjectBasicInfo = asyncHandler(async (req: Request, res: Respon
 
 export const getWorkspaceProjects = asyncHandler(
     async (req: Request, res: Response) => {
-        const start = Date.now();
         const { workspaceId } = req.params;
         const userId = req.user?.id;
 
@@ -169,7 +168,6 @@ export const getWorkspaceProjects = asyncHandler(
         const cachedProjects = await getCache(cacheKey);
         
         if (cachedProjects) {
-            console.log(`✅ CACHE HIT ⚡ [getWorkspaceProjects] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
             return res.status(200).json(
                 new ApiResponse(200, { projects: cachedProjects }, "Workspace projects fetched")
             );
@@ -219,7 +217,6 @@ export const getWorkspaceProjects = asyncHandler(
 
             // Cache for 10 minutes
             await setCache(cacheKey, projects, CacheTTL.MEDIUM * 2);
-            console.log(`❌ CACHE MISS 🐢 [getWorkspaceProjects] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
             return res.status(200).json(
                 new ApiResponse(200, { projects }, "Workspace projects fetched")
@@ -244,7 +241,6 @@ export const getWorkspaceProjects = asyncHandler(
 
         // Cache for 10 minutes
         await setCache(cacheKey, projects, CacheTTL.MEDIUM * 2);
-        console.log(`❌ CACHE MISS 🐢 [getWorkspaceProjects] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
         return res.status(200).json(
             new ApiResponse(200, { projects }, "Workspace projects fetched successfully")
@@ -360,7 +356,6 @@ export const getProjectOverview = asyncHandler(
 
         // Cache for 5 minutes
         await setCache(cacheKey, responseData, CacheTTL.MEDIUM);
-        console.log(`❌ CACHE MISS 🐢 [getProjectOverview] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
         return res.status(200).json(new ApiResponse(200, responseData, "Overview fetched"));
     }
@@ -467,7 +462,6 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
 
 export const getProjectMembers = asyncHandler(
     async (req: Request, res: Response) => {
-        const start = Date.now();
         const { projectId } = req.params;
         if (!projectId) throw new ApiError(401, "ProjectId is required");
 
@@ -476,7 +470,6 @@ export const getProjectMembers = asyncHandler(
         const cachedMembers = await getCache(cacheKey);
         
         if (cachedMembers) {
-            console.log(`✅ CACHE HIT ⚡ [getProjectMembers] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
             return res.status(200)
                 .json(
                     new ApiResponse(
@@ -524,7 +517,6 @@ export const getProjectMembers = asyncHandler(
 
         // Cache for 30 minutes
         await setCache(cacheKey, members, CacheTTL.LONG);
-        console.log(`❌ CACHE MISS 🐢 [getProjectMembers] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
         return res.status(200)
             .json(
@@ -593,7 +585,6 @@ export const getProjectActivities = asyncHandler(async (req: Request, res: Respo
 
 
 export const getRecentProjectActivities = asyncHandler(async (req, res) => {
-  const start = Date.now();
   const { projectId } = req.params;
   const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
@@ -604,7 +595,6 @@ export const getRecentProjectActivities = asyncHandler(async (req, res) => {
   const cachedActivities = await getCache(cacheKey);
   
   if (cachedActivities) {
-      console.log(`✅ CACHE HIT ⚡ [getRecentProjectActivities] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
       return res.json(
         new ApiResponse(
           200,
@@ -627,7 +617,6 @@ export const getRecentProjectActivities = asyncHandler(async (req, res) => {
 
   // Cache for 2 minutes (activity feed changes frequently)
   await setCache(cacheKey, activities, CacheTTL.SHORT * 2);
-  console.log(`❌ CACHE MISS 🐢 [getRecentProjectActivities] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.json(
     new ApiResponse(

@@ -12,7 +12,6 @@ import { invalidateSubscriptionCache } from "../utils/cacheInvalidation";
 
 // Get current user subscription
 export const getCurrentSubscription = asyncHandler(async (req: Request, res: Response) => {
-  const start = Date.now();
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
@@ -22,7 +21,6 @@ export const getCurrentSubscription = asyncHandler(async (req: Request, res: Res
   let cachedSubscription = await getCache(cacheKey);
   
   if (cachedSubscription) {
-    console.log(`✅ CACHE HIT ⚡ [getCurrentSubscription] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
     return res.status(200).json(
       new ApiResponse(200, { subscription: cachedSubscription }, "Subscription fetched successfully")
     );
@@ -75,7 +73,6 @@ export const getCurrentSubscription = asyncHandler(async (req: Request, res: Res
   } else {
     // Cache for 30 minutes
     await setCache(cacheKey, subscription, CacheTTL.LONG);
-    console.log(`❌ CACHE MISS 🐢 [getCurrentSubscription] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
   }
 
   return res.status(200).json(
@@ -459,7 +456,6 @@ export const getSubscriptionHistory = asyncHandler(async (req: Request, res: Res
 
 // Check if user can perform action based on subscription limits
 export const checkSubscriptionLimits = asyncHandler(async (req: Request, res: Response) => {
-  const start = Date.now();
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
@@ -469,7 +465,6 @@ export const checkSubscriptionLimits = asyncHandler(async (req: Request, res: Re
   const cachedLimits = await getCache(cacheKey);
   
   if (cachedLimits) {
-    console.log(`✅ CACHE HIT ⚡ [checkSubscriptionLimits] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
     return res.status(200).json(
       new ApiResponse(200, cachedLimits, "Subscription limits fetched successfully")
     );
@@ -516,7 +511,6 @@ export const checkSubscriptionLimits = asyncHandler(async (req: Request, res: Re
 
   // Cache for 30 minutes
   await setCache(cacheKey, responseData, CacheTTL.LONG);
-  console.log(`❌ CACHE MISS 🐢 [checkSubscriptionLimits] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.status(200).json(
     new ApiResponse(200, responseData, "Subscription limits fetched successfully")

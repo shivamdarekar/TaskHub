@@ -420,7 +420,6 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 //update task position & status(for drag and drop)
 //filter in ui all assign to me and my tasks and unassign tasks
 export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) => {
-  const start = Date.now();
   const { projectId } = req.params;
   const userId = req.user?.id;
   const { view } = req.query;
@@ -434,7 +433,6 @@ export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) =
   const cachedKanban = await getCache(cacheKey);
   
   if (cachedKanban) {
-    console.log(`✅ CACHE HIT ⚡ [getKanbanTasks] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
     return res.json(
       new ApiResponse(200, { kanban: cachedKanban }, "Kanban tasks fetched successfully")
     );
@@ -479,7 +477,6 @@ export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) =
 
   // Cache for 1 minute (short TTL for real-time updates)
   await setCache(cacheKey, kanban, CacheTTL.SHORT);
-  console.log(`❌ CACHE MISS 🐢 [getKanbanTasks] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.json(
     new ApiResponse(200, { kanban }, "Kanban tasks fetched successfully")
@@ -558,7 +555,6 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
 
 
 export const getCalendarTasks = asyncHandler(async (req, res) => {
-  const start = Date.now();
   const { projectId } = req.params;
   const userId = req.user?.id;
   const { startDate, endDate, view } = req.query;
@@ -573,7 +569,6 @@ export const getCalendarTasks = asyncHandler(async (req, res) => {
   const cachedTasks = await getCache(cacheKey);
   
   if (cachedTasks) {
-    console.log(`✅ CACHE HIT ⚡ [getCalendarTasks] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
     return res.json(
       new ApiResponse(
         200,
@@ -623,7 +618,6 @@ export const getCalendarTasks = asyncHandler(async (req, res) => {
 
   // Cache for 3 minutes
   await setCache(cacheKey, tasks, CacheTTL.SHORT * 3);
-  console.log(`❌ CACHE MISS 🐢 [getCalendarTasks] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.json(
     new ApiResponse(
