@@ -11,6 +11,9 @@ import { sendVerificationEmail } from "../services/verifyEmail";
 import { sendPasswordResetOTP } from "../services/resetPass";
 import { sendTwoFAEmail } from "../services/TwoFA";
 import { PLAN_LIMITS } from "../services/razorpay.service";
+import { getCache, setCache, CacheTTL } from "../config/cache.service";
+import { CacheKeys } from "../utils/cacheKeys";
+import { invalidateUserCache } from "../utils/cacheInvalidation";
 
 
 interface RegisterUserBody {
@@ -540,6 +543,7 @@ const resetPassword = asyncHandler(async (req: Request<{}, {}, ResetPasswordBody
 //logout user
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
+  const jti = req.user?.jti;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
 
@@ -551,6 +555,12 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!user) throw new ApiError(401, "Error in user logout process ");
+
+  // Blacklist the access token for remaining TTL (1 day = 86400 seconds)
+  if (jti) {
+    const { blacklist } = await import("../config/redis.js");
+    await blacklist(jti, 86400); // Blacklist for 24 hours (access token expiry)
+  }
 
   const options: CookieOptions = {
     httpOnly: true,
@@ -567,9 +577,21 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 
 //fetch curent user
 const fetchCurrentUser = asyncHandler(async (req: Request, res: Response) => {
+  const start = Date.now();
   const userId = req.user?.id;
   if (!userId) {
     throw new ApiError(401, "Not Authorized");
+  }
+
+  // Try cache first
+  const cacheKey = CacheKeys.userProfile(userId);
+  const cachedUser = await getCache(cacheKey);
+  
+  if (cachedUser) {
+    console.log(`✅ CACHE HIT ⚡ [fetchCurrentUser] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { user: cachedUser }, "Current user fetched successfully"));
   }
 
   const user = await prisma.user.findUnique({
@@ -600,6 +622,10 @@ const fetchCurrentUser = asyncHandler(async (req: Request, res: Response) => {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+
+  // Cache for 1 hour
+  await setCache(cacheKey, safeUser, CacheTTL.VERY_LONG);
+  console.log(`❌ CACHE MISS 🐢 [fetchCurrentUser] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res
     .status(200)
@@ -692,6 +718,9 @@ const updateProfile = asyncHandler(async (req: Request<{}, {}, UpdateProfileBody
     }
   });
 
+  // Invalidate user cache
+  await invalidateUserCache(userId);
+
   const safeUser = {
     id: updatedUser.id,
     name: updatedUser.name,
@@ -739,6 +768,9 @@ const changePassword = asyncHandler(async (req: Request<{}, {}, ChangePasswordBo
     data: { password: hashedNewPassword }
   });
 
+  // Invalidate user cache
+  await invalidateUserCache(userId);
+
   return res.status(200).json(
     new ApiResponse(200, {}, "Password changed successfully")
   );
@@ -746,9 +778,21 @@ const changePassword = asyncHandler(async (req: Request<{}, {}, ChangePasswordBo
 
 //get user stats - optimized with parallel queries
 const getUserStats = asyncHandler(async (req: Request, res: Response) => {
+  const start = Date.now();
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
+
+  // Try cache first
+  const cacheKey = CacheKeys.userStats(userId);
+  const cachedStats = await getCache(cacheKey);
+  
+  if (cachedStats) {
+    console.log(`✅ CACHE HIT ⚡ [getUserStats] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+    return res.status(200).json(
+      new ApiResponse(200, { stats: cachedStats }, "User stats fetched successfully")
+    );
+  }
 
   // Use Promise.all for parallel queries - faster than sequential
   const [workspacesCount, tasksCount, projectsCount, user] = await Promise.all([
@@ -785,6 +829,10 @@ const getUserStats = asyncHandler(async (req: Request, res: Response) => {
     lastLogin: user.lastLogin,
     memberSince: user.createdAt
   };
+
+  // Cache for 30 minutes
+  await setCache(cacheKey, stats, CacheTTL.LONG);
+  console.log(`❌ CACHE MISS 🐢 [getUserStats] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.status(200).json(
     new ApiResponse(200, { stats }, "User stats fetched successfully")

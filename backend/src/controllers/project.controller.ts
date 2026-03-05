@@ -4,6 +4,9 @@ import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/apiResponse";
 import { asyncHandler } from "../utils/asynchandler";
 import { Request, Response } from "express";
+import { getCache, setCache, CacheTTL, deleteCache } from "../config/cache.service";
+import { CacheKeys } from "../utils/cacheKeys";
+import { invalidateProjectCache } from "../utils/cacheInvalidation";
 
 interface ProjectBody {
     name: string;
@@ -95,6 +98,9 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!project) throw new ApiError(500, "Error while creating project")
 
+    // Invalidate workspace projects cache
+    await deleteCache(CacheKeys.workspaceProjects(workspaceId));
+
     //log activity (async, doesn't block response if it fails)
     logActivity({
         type: ActivityType.PROJECT_CREATED,
@@ -151,11 +157,23 @@ export const getProjectBasicInfo = asyncHandler(async (req: Request, res: Respon
 
 export const getWorkspaceProjects = asyncHandler(
     async (req: Request, res: Response) => {
+        const start = Date.now();
         const { workspaceId } = req.params;
         const userId = req.user?.id;
 
         if (!workspaceId) throw new ApiError(401, "workspaceId is required");
         if (!userId) throw new ApiError(400, "Not Authorized");
+
+        // Try cache first
+        const cacheKey = CacheKeys.workspaceProjects(workspaceId);
+        const cachedProjects = await getCache(cacheKey);
+        
+        if (cachedProjects) {
+            console.log(`✅ CACHE HIT ⚡ [getWorkspaceProjects] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+            return res.status(200).json(
+                new ApiResponse(200, { projects: cachedProjects }, "Workspace projects fetched")
+            );
+        }
 
         // Check if user is workspace owner
         const workspace = await prisma.workSpace.findUnique({
@@ -199,6 +217,10 @@ export const getWorkspaceProjects = asyncHandler(
                 orderBy: { createdAt: "desc" },
             });
 
+            // Cache for 10 minutes
+            await setCache(cacheKey, projects, CacheTTL.MEDIUM * 2);
+            console.log(`❌ CACHE MISS 🐢 [getWorkspaceProjects] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
+
             return res.status(200).json(
                 new ApiResponse(200, { projects }, "Workspace projects fetched")
             );
@@ -220,6 +242,10 @@ export const getWorkspaceProjects = asyncHandler(
             orderBy: { createdAt: "desc" },
         });
 
+        // Cache for 10 minutes
+        await setCache(cacheKey, projects, CacheTTL.MEDIUM * 2);
+        console.log(`❌ CACHE MISS 🐢 [getWorkspaceProjects] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
+
         return res.status(200).json(
             new ApiResponse(200, { projects }, "Workspace projects fetched successfully")
         )
@@ -229,12 +255,24 @@ export const getWorkspaceProjects = asyncHandler(
 
 export const getProjectOverview = asyncHandler(
     async (req: Request, res: Response) => {
+        const start = Date.now();
         const { projectId } = req.params;
 
         if (!projectId) throw new ApiError(401, "ProjectId is required");
 
-        // Optimized: Only 4 queries using groupBy aggregation (70% fewer queries)
-        const [project, statusCounts, priorityCounts, overdueCount] = await prisma.$transaction([
+        // Try cache first
+        const cacheKey = CacheKeys.projectOverview(projectId);
+        const cachedOverview = await getCache(cacheKey);
+        
+        if (cachedOverview) {
+            console.log(`✅ CACHE HIT ⚡ [getProjectOverview] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+            return res.status(200).json(new ApiResponse(200, cachedOverview, "Project overview fetched successfully"));
+        }
+
+        // OPTIMIZATION: Use Promise.all instead of $transaction for parallel execution
+        // $transaction runs queries SEQUENTIALLY, Promise.all runs them in PARALLEL
+        // Expected improvement: 1379ms -> ~300-400ms (3-4x faster)
+        const [project, statusCounts, priorityCounts, overdueCount] = await Promise.all([
             // Query 1: Get basic project info
             prisma.project.findUnique({
                 where: { id: projectId },
@@ -307,7 +345,7 @@ export const getProjectOverview = asyncHandler(
             }
         });
 
-        return res.status(200).json(new ApiResponse(200, {
+        const responseData = {
             stats: {
                 totalTasks: project._count.tasks,
                 completedTasks: tasksByStatus.COMPLETED,
@@ -318,7 +356,13 @@ export const getProjectOverview = asyncHandler(
             },
             tasksByStatus,
             tasksByPriority,
-        }, "Overview fetched"));
+        };
+
+        // Cache for 5 minutes
+        await setCache(cacheKey, responseData, CacheTTL.MEDIUM);
+        console.log(`❌ CACHE MISS 🐢 [getProjectOverview] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
+
+        return res.status(200).json(new ApiResponse(200, responseData, "Overview fetched"));
     }
 );
 
@@ -367,6 +411,9 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!updatedProject) throw new ApiError(401, "Failed to update project");
 
+    // Invalidate project cache
+    await invalidateProjectCache(projectId);
+
     //log activity (async, doesn't block response if it fails)
     const changes: string[] = [];
     if (name && name !== currentProject?.name) changes.push(`name to "${name}"`);
@@ -408,6 +455,9 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!deleteProject) throw new ApiError(403, "Error while deleting the Project");
 
+    // Invalidate project cache
+    await invalidateProjectCache(projectId);
+
     return res.status(200)
         .json(
             new ApiResponse(200, {}, "Project deleted successfully")
@@ -417,8 +467,25 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
 
 export const getProjectMembers = asyncHandler(
     async (req: Request, res: Response) => {
+        const start = Date.now();
         const { projectId } = req.params;
         if (!projectId) throw new ApiError(401, "ProjectId is required");
+
+        // Try cache first
+        const cacheKey = CacheKeys.projectMembers(projectId);
+        const cachedMembers = await getCache(cacheKey);
+        
+        if (cachedMembers) {
+            console.log(`✅ CACHE HIT ⚡ [getProjectMembers] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+            return res.status(200)
+                .json(
+                    new ApiResponse(
+                        200,
+                        { members: cachedMembers },
+                        "Project members fetch successfully"
+                    )
+                );
+        }
 
         const projectAccess = await prisma.projectAccess.findMany({
             where: {
@@ -454,6 +521,10 @@ export const getProjectMembers = asyncHandler(
             accessLevel: access.workspaceMember.accessLevel,
             joinedAt: access.createdAt,
         }));
+
+        // Cache for 30 minutes
+        await setCache(cacheKey, members, CacheTTL.LONG);
+        console.log(`❌ CACHE MISS 🐢 [getProjectMembers] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
         return res.status(200)
             .json(
@@ -522,11 +593,27 @@ export const getProjectActivities = asyncHandler(async (req: Request, res: Respo
 
 
 export const getRecentProjectActivities = asyncHandler(async (req, res) => {
+  const start = Date.now();
   const { projectId } = req.params;
   const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
     if (!projectId) throw new ApiError(401, "ProjectId is required");
     
+  // Try cache first (2 minutes TTL for activity feed)
+  const cacheKey = CacheKeys.projectRecentActivities(projectId);
+  const cachedActivities = await getCache(cacheKey);
+  
+  if (cachedActivities) {
+      console.log(`✅ CACHE HIT ⚡ [getRecentProjectActivities] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+      return res.json(
+        new ApiResponse(
+          200,
+          { activities: cachedActivities },
+          "Recent activities fetched"
+        )
+      );
+  }
+
   const activities = await prisma.activity.findMany({
     where: { projectId },
     include: {
@@ -537,6 +624,10 @@ export const getRecentProjectActivities = asyncHandler(async (req, res) => {
     orderBy: { createdAt: "desc" },
     take: limit,
   });
+
+  // Cache for 2 minutes (activity feed changes frequently)
+  await setCache(cacheKey, activities, CacheTTL.SHORT * 2);
+  console.log(`❌ CACHE MISS 🐢 [getRecentProjectActivities] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.json(
     new ApiResponse(

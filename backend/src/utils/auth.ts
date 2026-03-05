@@ -13,18 +13,20 @@ export const comparePassword = async (enteredPassword: string, savedPassword: st
     return await bcrypt.compare(enteredPassword, savedPassword);
 }
 
-//create JWT token
+//create JWT token with jti for session tracking
 export const generateAccessToken = (userId: string) => {
+    const jti = crypto.randomUUID(); // unique JWT ID for session tracking
     return jwt.sign(
-        { id: userId },
+        { id: userId, jti },
         process.env.ACCESS_TOKEN_SECRET as string,
         { expiresIn:'1d' }
     );
 }
 
 export const generateRefreshToken = (userId: string) => {
+    const jti = crypto.randomUUID(); // unique JWT ID for session tracking
     return jwt.sign(
-        { id: userId },
+        { id: userId, jti },
         process.env.REFRESH_TOKEN_SECRET as string,
         { expiresIn:'7d' }
     );

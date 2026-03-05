@@ -6,12 +6,27 @@ import prisma from "../config/prisma";
 import razorpayService, { PLAN_LIMITS } from "../services/razorpay.service";
 import { SubscriptionPlan, SubscriptionStatus, PaymentStatus } from "@prisma/client";
 import { sendSubscriptionConfirmationEmail, sendPaymentFailedEmail, sendSubscriptionCancelledEmail } from "../services/subscriptionEmail";
+import { getCache, setCache, CacheTTL } from "../config/cache.service";
+import { CacheKeys } from "../utils/cacheKeys";
+import { invalidateSubscriptionCache } from "../utils/cacheInvalidation";
 
 // Get current user subscription
 export const getCurrentSubscription = asyncHandler(async (req: Request, res: Response) => {
+  const start = Date.now();
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
+
+  // Try cache first
+  const cacheKey = CacheKeys.subscription(userId);
+  let cachedSubscription = await getCache(cacheKey);
+  
+  if (cachedSubscription) {
+    console.log(`✅ CACHE HIT ⚡ [getCurrentSubscription] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+    return res.status(200).json(
+      new ApiResponse(200, { subscription: cachedSubscription }, "Subscription fetched successfully")
+    );
+  }
 
   let subscription = await prisma.subscription.findUnique({
     where: { userId },
@@ -55,6 +70,12 @@ export const getCurrentSubscription = asyncHandler(async (req: Request, res: Res
         },
       },
     });
+    // Clear cache since we updated the subscription
+    await invalidateSubscriptionCache(userId);
+  } else {
+    // Cache for 30 minutes
+    await setCache(cacheKey, subscription, CacheTTL.LONG);
+    console.log(`❌ CACHE MISS 🐢 [getCurrentSubscription] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
   }
 
   return res.status(200).json(
@@ -438,9 +459,21 @@ export const getSubscriptionHistory = asyncHandler(async (req: Request, res: Res
 
 // Check if user can perform action based on subscription limits
 export const checkSubscriptionLimits = asyncHandler(async (req: Request, res: Response) => {
+  const start = Date.now();
   const userId = req.user?.id;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
+
+  // Try cache first
+  const cacheKey = CacheKeys.subscriptionLimits(userId);
+  const cachedLimits = await getCache(cacheKey);
+  
+  if (cachedLimits) {
+    console.log(`✅ CACHE HIT ⚡ [checkSubscriptionLimits] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+    return res.status(200).json(
+      new ApiResponse(200, cachedLimits, "Subscription limits fetched successfully")
+    );
+  }
 
   const subscription = await prisma.subscription.findUnique({
     where: { userId },
@@ -479,7 +512,13 @@ export const checkSubscriptionLimits = asyncHandler(async (req: Request, res: Re
     },
   };
 
+  const responseData = { subscription, limits };
+
+  // Cache for 30 minutes
+  await setCache(cacheKey, responseData, CacheTTL.LONG);
+  console.log(`❌ CACHE MISS 🐢 [checkSubscriptionLimits] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
+
   return res.status(200).json(
-    new ApiResponse(200, { subscription, limits }, "Subscription limits fetched successfully")
+    new ApiResponse(200, responseData, "Subscription limits fetched successfully")
   );
 });

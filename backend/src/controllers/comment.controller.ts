@@ -4,6 +4,8 @@ import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/apiResponse";
 import { asyncHandler } from "../utils/asynchandler";
 import { Request, Response } from "express";
+import { getCache, setCache, CacheTTL, deleteCache } from "../config/cache.service";
+import { CacheKeys } from "../utils/cacheKeys";
 
 interface CreateCommentBody {
     content: string
@@ -44,6 +46,9 @@ export const addComment = asyncHandler(async (req: Request, res: Response) => {
     });
 
     if (!comment) throw new ApiError(403, "Failed to create comment");
+
+    // Invalidate task comments cache
+    await deleteCache(CacheKeys.taskComments(taskId));
 
     //log activity
     logActivity({
@@ -161,11 +166,23 @@ export const getRecentProjectComments = asyncHandler(
 
 // GET ALL COMMENTS FOR A SPECIFIC TASK (for task detail page)
 export const getTaskComments = asyncHandler(async (req: Request, res: Response) => {
+    const start = Date.now();
     const { taskId } = req.params;
     const userId = req.user?.id;
 
     if (!userId) throw new ApiError(401, "Not Authorized");
     if (!taskId) throw new ApiError(400, "TaskId is required");
+
+    // Try cache first (3 minutes TTL for comments)
+    const cacheKey = CacheKeys.taskComments(taskId);
+    const cachedComments = await getCache(cacheKey);
+    
+    if (cachedComments) {
+        console.log(`✅ CACHE HIT ⚡ [getTaskComments] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+        return res.status(200).json(
+            new ApiResponse(200, cachedComments, "Task comments retrieved successfully")
+        );
+    }
 
     const comments = await prisma.comment.findMany({
         where: { taskId },
@@ -184,8 +201,14 @@ export const getTaskComments = asyncHandler(async (req: Request, res: Response) 
         orderBy: { createdAt: 'desc' },
     });
 
+    const responseData = { comments, count: comments.length };
+
+    // Cache for 3 minutes
+    await setCache(cacheKey, responseData, CacheTTL.SHORT * 3);
+    console.log(`❌ CACHE MISS 🐢 [getTaskComments] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
+
     return res.status(200).json(
-        new ApiResponse(200, { comments, count: comments.length }, "Task comments retrieved successfully")
+        new ApiResponse(200, responseData, "Task comments retrieved successfully")
     );
 });
 

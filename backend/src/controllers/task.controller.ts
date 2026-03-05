@@ -5,6 +5,9 @@ import { ApiError } from "../utils/apiError";
 import prisma from "../config/prisma";
 import { ActivityType, logActivity } from "../services/activityLogger";
 import { ApiResponse } from "../utils/apiResponse";
+import { getCache, setCache, CacheTTL } from "../config/cache.service";
+import { CacheKeys } from "../utils/cacheKeys";
+import { invalidateTaskCache } from "../utils/cacheInvalidation";
 
 interface CreateTaskBody {
     title: string;
@@ -102,6 +105,9 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
     });
 
     if (!task) throw new ApiError(403, "Failed to create task");
+
+    // Invalidate task and project cache
+    await invalidateTaskCache(task.id, projectId);
 
     logActivity({
         type: ActivityType.TASK_CREATED,
@@ -331,6 +337,9 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
 
     if (!updatedTask) throw new ApiError(403, "Failed to update task");
 
+    // Invalidate task and project cache
+    await invalidateTaskCache(taskId, existingTask.projectId);
+
     // Log significant changes
     if (updates.status && updates.status !== existingTask.status) {
         logActivity({
@@ -399,6 +408,9 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
         where: { id: taskId }
     });
 
+    // Invalidate task and project cache
+    await invalidateTaskCache(taskId, taskData.projectId);
+
     return res.status(200).json(
         new ApiResponse(200, {}, "Task deleted successfully")
     )
@@ -408,12 +420,25 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 //update task position & status(for drag and drop)
 //filter in ui all assign to me and my tasks and unassign tasks
 export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) => {
+  const start = Date.now();
   const { projectId } = req.params;
   const userId = req.user?.id;
   const { view } = req.query;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
   if (!projectId) throw new ApiError(400, "Project ID is required");
+
+  // Try cache first (1 minute TTL for frequently updated kanban boards)
+  const viewKey = view as string || 'all';
+  const cacheKey = CacheKeys.kanbanTasks(projectId, viewKey);
+  const cachedKanban = await getCache(cacheKey);
+  
+  if (cachedKanban) {
+    console.log(`✅ CACHE HIT ⚡ [getKanbanTasks] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+    return res.json(
+      new ApiResponse(200, { kanban: cachedKanban }, "Kanban tasks fetched successfully")
+    );
+  }
 
   const where: any = { projectId };
 
@@ -451,6 +476,10 @@ export const getKanbanTasks = asyncHandler(async (req: Request, res: Response) =
     acc[status] = tasks.filter(task => task.status === status);
     return acc;
   }, {} as Record<TaskStatus, typeof tasks>);
+
+  // Cache for 1 minute (short TTL for real-time updates)
+  await setCache(cacheKey, kanban, CacheTTL.SHORT);
+  console.log(`❌ CACHE MISS 🐢 [getKanbanTasks] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.json(
     new ApiResponse(200, { kanban }, "Kanban tasks fetched successfully")
@@ -529,12 +558,30 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
 
 
 export const getCalendarTasks = asyncHandler(async (req, res) => {
+  const start = Date.now();
   const { projectId } = req.params;
   const userId = req.user?.id;
   const { startDate, endDate, view } = req.query;
 
   if (!userId) throw new ApiError(401, "Not Authorized");
   if (!projectId) throw new ApiError(400, "Project ID is required");
+
+  // Try cache first (3 minutes TTL for calendar view)
+  const startDateStr = startDate as string || 'null';
+  const endDateStr = endDate as string || 'null';
+  const cacheKey = CacheKeys.calendarTasks(projectId, startDateStr, endDateStr);
+  const cachedTasks = await getCache(cacheKey);
+  
+  if (cachedTasks) {
+    console.log(`✅ CACHE HIT ⚡ [getCalendarTasks] | Key: ${cacheKey} | Time: ${Date.now() - start}ms`);
+    return res.json(
+      new ApiResponse(
+        200,
+        { tasks: cachedTasks },
+        "Calendar tasks fetched successfully"
+      )
+    );
+  }
 
   const where: any = { projectId };
 
@@ -573,6 +620,10 @@ export const getCalendarTasks = asyncHandler(async (req, res) => {
     },
     orderBy: [{ dueDate: "asc" }],
   });
+
+  // Cache for 3 minutes
+  await setCache(cacheKey, tasks, CacheTTL.SHORT * 3);
+  console.log(`❌ CACHE MISS 🐢 [getCalendarTasks] | Key: ${cacheKey} | DB Query Time: ${Date.now() - start}ms`);
 
   return res.json(
     new ApiResponse(
