@@ -17,6 +17,11 @@ import { helmetConfig, generalLimiter, corsOptions } from "./middleware/security
 
 const app = express();
 
+// Trust the first proxy (Railway, Render, Nginx, etc.)
+// Required for express-rate-limit to correctly read real client IPs
+// from X-Forwarded-For headers set by reverse proxies in production
+app.set("trust proxy", 1);
+
 // Security headers
 app.use(helmetConfig);
 
