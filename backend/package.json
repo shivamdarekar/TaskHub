@@ -4,10 +4,14 @@
   "description": "a project management tool for managers developers and all employees to manage their projects,workflows.",
   "main": "app.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "type-check": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "shivam darekar",
   "license": "ISC",

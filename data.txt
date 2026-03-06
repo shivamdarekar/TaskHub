@@ -26,11 +26,17 @@ Keeping schema.prisma inside src/ makes migrations/config messy.
 
 //add caching in slices 
 
-//next check db extra query reduce it or use raw sql 
+//next check db extra query reduce it or use raw sql also response size un-neccesary query fields
 //at initial load the ui not look good it animation and transition work weird
 
 //use docker image 
 //redis for caching
-//add some web details features like things in home page
+// md file of gpt content
 
+//logging system - winston
+//api documentation - swagger
+//load testing - k6, apache jmeter
+//dockerize backend - docker
+//CI-CD Automate testing and deployment. - github actions
+//real-time updates - socket.io
 

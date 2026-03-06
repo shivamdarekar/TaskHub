@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# TypeScript compiled output (builder stage handles this)
+dist/
+
+# Environment files - NEVER include secrets in Docker image
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Development only files
+README.md
+*.md
+REDIS_SETUP.md
+REDIS_IMPLEMENTATION_GUIDE.md
+PERFORMANCE_OPTIMIZATION.md
+DATABASE_INDEXES.md
+
+# Test files
+*.test.ts
+*.spec.ts
+__tests__/
+
+# Prisma migrations are NOT needed at runtime
+# (migrations run separately via CI/CD pipeline)
+# prisma/migrations/   ← keep commented so migrations are excluded
+prisma/migrations/
+
+# Temporary files
+tmp/
+temp/
