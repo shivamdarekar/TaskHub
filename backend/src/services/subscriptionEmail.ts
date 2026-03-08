@@ -1,6 +1,6 @@
 import nodemailer, { getTestMessageUrl } from "nodemailer";
 import { ApiError } from "../utils/apiError";
-import { createTransporter } from "./email.service";
+import { getTransporter } from "./email.service";
 
 // Subscription confirmation email template
 const createSubscriptionConfirmationTemplate = (userName: string, plan: string, frequency: string, amount: number, expiryDate: string) => {
@@ -505,7 +505,7 @@ export const sendSubscriptionConfirmationEmail = async (
     expiryDate: Date
 ) => {
     try {
-        const transporter = await createTransporter();
+        const transporter = await getTransporter();
         
         const formattedExpiryDate = expiryDate.toLocaleDateString('en-IN', {
             year: 'numeric',
@@ -539,7 +539,7 @@ export const sendPaymentFailedEmail = async (
     reason: string
 ) => {
     try {
-        const transporter = await createTransporter();
+        const transporter = await getTransporter();
 
         const info = await transporter.sendMail({
             from: `"TaskHub" <${process.env.EMAIL_FROM || 'noreply@taskhub.com'}>`,
@@ -567,7 +567,7 @@ export const sendSubscriptionCancelledEmail = async (
     expiryDate: Date
 ) => {
     try {
-        const transporter = await createTransporter();
+        const transporter = await getTransporter();
         
         const formattedExpiryDate = expiryDate.toLocaleDateString('en-IN', {
             year: 'numeric',

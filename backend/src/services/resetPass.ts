@@ -1,5 +1,5 @@
 import { ApiError } from "../utils/apiError";
-import { createTransporter } from "./email.service";
+import { getTransporter } from "./email.service";
 import nodemailer from "nodemailer";
 
 
@@ -170,7 +170,7 @@ export const sendPasswordResetOTP = async(
     otp:string
 ) => {
     try {
-        const transporter = await createTransporter();
+        const transporter = await getTransporter();
 
         const mailOptions = {
             from: process.env.EMAIL_FROM || '"TaskHub" <noreply@taskhub.com>',

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { ApiError } from "../utils/apiError";
-import { createTransporter } from "./email.service";
+import { getTransporter } from "./email.service";
 
 const createTwoFAEmailTemplate = (userName: string, otp: string) => {
     return `
@@ -172,7 +172,7 @@ export const sendTwoFAEmail = async (
     otp: string
 ) => {
     try {
-        const transporter = await createTransporter();
+        const transporter = await getTransporter();
 
         const mailOptions = {
             from: process.env.EMAIL_FROM || '"TaskHub" <noreply@taskhub.com>',

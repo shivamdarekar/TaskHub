@@ -1,6 +1,6 @@
 import nodemailer, { getTestMessageUrl } from "nodemailer";
 import { ApiError } from "../utils/apiError";
-import { createTransporter } from "./email.service";
+import { getTransporter } from "./email.service";
 
 //html template
 const createVerificationEmailTemplate = (userName: string, verificationLink: string) => {
@@ -162,7 +162,7 @@ export const sendVerificationEmail = async (
     redirect?: string // Optional redirect parameter for invite flow
 ) => {
     try {
-        const transporter = await createTransporter();
+        const transporter = await getTransporter();
 
         // Include redirect parameter if present (for invite flow)
         const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''}`;
@@ -174,7 +174,13 @@ export const sendVerificationEmail = async (
             html: createVerificationEmailTemplate(userName, verificationLink),
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        // Add timeout to sendMail to prevent hanging
+        const info = await Promise.race([
+            transporter.sendMail(mailOptions),
+            new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error('Email sending timeout after 30 seconds')), 30000)
+            )
+        ]);
 
         //log email preview url in development
         if (process.env.NODE_ENV !== 'production' && info.messageId) {
@@ -183,8 +189,24 @@ export const sendVerificationEmail = async (
 
         return info;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error while sending verification email", error);
+        
+        // Provide more specific error messages
+        if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+            console.error('SMTP Connection Details:', {
+                host: process.env.SMTP_HOST,
+                port: process.env.SMTP_PORT || 465,
+                user: process.env.SMTP_USER,
+                secure: Number(process.env.SMTP_PORT) === 465 || process.env.SMTP_SECURE === 'true'
+            });
+            throw new ApiError(500, "Email service connection timeout. Please contact support.");
+        }
+        
+        if (error.code === 'EAUTH') {
+            throw new ApiError(500, "Email authentication failed. Please contact support.");
+        }
+        
         throw new ApiError(500, "Failed to send verification email");
     }
 };
