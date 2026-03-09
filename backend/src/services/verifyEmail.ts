@@ -76,12 +76,20 @@ const createVerificationEmailTemplate = (userName: string, verificationLink: str
         .button {
           display: inline-block;
           background: #3b82f6;
-          color: #ffffff;
+          color: #ffffff !important;
           text-decoration: none;
           padding: 10px 24px;
           border-radius: 6px;
           font-weight: 600;
           font-size: 14px;
+        }
+        .button:hover {
+          background: #2563eb;
+        }
+        /* Force link color in email clients */
+        a.button, a.button:link, a.button:visited, a.button:active {
+          color: #ffffff !important;
+          text-decoration: none !important;
         }
         .info-box {
           background: #f4f5f7;
@@ -129,7 +137,7 @@ const createVerificationEmailTemplate = (userName: string, verificationLink: str
           </p>
           
           <div class="button-container">
-            <a href="${verificationLink}" class="button">Verify Email Address</a>
+            <a href="${verificationLink}" class="button" style="color: #ffffff !important; text-decoration: none !important;">Verify Email Address</a>
           </div>
           
           <div class="info-box">
