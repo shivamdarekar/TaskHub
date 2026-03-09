@@ -61,8 +61,6 @@ const startServer = async () => {
     if (emailResult.status === "fulfilled") {
       const emailProvider = process.env.BREVO_API_KEY 
         ? "Brevo" 
-        : process.env.RESEND_API_KEY 
-        ? "Resend" 
         : process.env.NODE_ENV === "production" 
         ? "SMTP" 
         : "Ethereal (dev)";

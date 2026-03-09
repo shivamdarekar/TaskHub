@@ -1,14 +1,17 @@
-# Email Service Fix for Railway Deployment
+# Email Service Configuration Guide
 
-## ✅ SOLUTION IMPLEMENTED: Brevo Integration (Recommended!)
+## ✅ CURRENT IMPLEMENTATION: 3-Option Priority System
 
-Railway blocks all SMTP ports - **Brevo is now integrated and ready to use!**
+Your email service automatically selects the best available provider:
+1. **Brevo** (HTTP API) - Production ← **Recommended for Railway** ✅
+2. **SMTP** (Gmail) - Local development
+3. **Ethereal** (Auto-fallback) - Testing only
 
-### Why Brevo?
+### Why Brevo for Production?
 - ✅ **300 emails/day FREE forever** (best free tier!)
 - ✅ **No domain verification needed** - works immediately
 - ✅ **Send to ANY email address** - perfect for testing
-- ✅ **Works on Railway/Heroku/all cloud platforms**
+- ✅ **Works on Railway/Heroku/all cloud platforms** (uses HTTPS, not SMTP ports)
 - ✅ **Professional enough for college/resume projects**
 
 ---
@@ -52,255 +55,150 @@ FRONTEND_URL=https://your-frontend-url.vercel.app
 The system automatically chooses the best available option:
 
 1. **Brevo** (if `BREVO_API_KEY` exists) ← **Recommended for Railway** ✅
-2. **Resend** (if `RESEND_API_KEY` exists) ⚠️ Requires domain
-3. **SMTP** (if `NODE_ENV=production`) ❌ Blocked on Railway  
-4. **Ethereal** (for development) 🧪 Testing only
+2. **SMTP** (if `NODE_ENV=production`) ⚠️ Blocked on Railway (works locally)
+3. **Ethereal** (auto-fallback in development) 🧪 Testing only
 
 ---
 
-## What Was Implemented
+## What's Implemented
 
-### Files Created/Modified:
-1. ✅ [email.brevo.ts](src/services/email.brevo.ts) - Brevo HTTP API integration
-2. ✅ [email.resend.ts](src/services/email.resend.ts) - Resend integration (backup)
-3. ✅ [email.service.ts](src/services/email.service.ts) - Smart priority system
-4. ✅ [app.ts](src/app.ts) - Updated email provider detection
-5. ✅ [.env.example](/.env.example) - Updated with all options
-6. ✅ Packages installed: `@getbrevo/brevo`, `axios`, `resend`
+### Files Modified:
+1. ✅ [email.brevo.ts](src/services/email.brevo.ts) - Brevo HTTP API integration (uses axios)
+2. ✅ [email.service.ts](src/services/email.service.ts) - Smart 3-provider priority system
+3. ✅ [verifyEmail.ts](src/services/verifyEmail.ts) - Uses getTransporter() with timeout protection
+4. ✅ [resetPass.ts](src/services/resetPass.ts) - Uses getTransporter()
+5. ✅ [TwoFA.ts](src/services/TwoFA.ts) - Uses getTransporter()
+6. ✅ [inviteMember.ts](src/services/inviteMember.ts) - Uses getTransporter()
+7. ✅ [subscriptionEmail.ts](src/services/subscriptionEmail.ts) - Uses getTransporter()
+8. ✅ [app.ts](src/app.ts) - Email provider detection in startup logs
+9. ✅ [.env.example](/.env.example) - Documentation for all 3 options
+
+### Packages Installed:
+- `axios` - For Brevo HTTP API calls
+- `nodemailer` - Base email functionality
 
 ### How It Works:
-- System checks for `BREVO_API_KEY` first
-- Falls back to Resend → SMTP → Ethereal if not found
+- Singleton pattern: transporter reused across all email services
+- Connection verification before sending
+- Automatic provider selection (Brevo → SMTP → Ethereal)
 - All existing email functions work unchanged
-- No code changes needed elsewhere
+- No code changes needed in controllers or routes
 
 ---
 
-## Comparison: Brevo vs Resend vs SMTP
+## Comparison: Brevo vs Gmail SMTP
 
-| Feature | **Brevo** | Resend | Gmail SMTP |
-|---------|-----------|--------|------------|
-| **Free Tier** | 300/day | 100/day | Unlimited |
-| **Domain Required** | ❌ No | ✅ Yes (for multiple recipients) | ❌ No |
-| **Works on Railway** | ✅ Yes | ✅ Yes | ❌ No (blocked) |
-| **Send to Any Email** | ✅ Yes | ⚠️ Only your own without domain | ✅ Yes |
-| **Setup Time** | 5 min | 5 min | 2 min (local only) |
-| **Best For** | **Production** | Custom domains | Local development |
+| Feature | **Brevo (HTTP API)** | **Gmail SMTP** |
+|---------|----------------------|----------------|
+| **Free Tier** | 300/day | Unlimited |
+| **Domain Required** | ❌ No | ❌ No |
+| **Works on Railway** | ✅ Yes (HTTPS) | ❌ No (ports blocked) |
+| **Works Locally** | ✅ Yes | ✅ Yes |
+| **Send to Any Email** | ✅ Yes | ✅ Yes |
+| **Setup Time** | 5 min | 2 min |
+| **Port Used** | 443 (HTTPS) | 465/587 (SMTP) |
+| **Best For** | **Production (Railway)** | Local development |
 
-**Winner for Railway: Brevo** 🏆
+**Winner for Railway: Brevo** 🏆 (HTTPS never gets blocked)
 
 ---
 
-## Alternative Free Options
+## Alternative Free Email Services (If Needed)
 
 If Brevo doesn't work for some reason:
 
 ### 1. SendGrid (Twilio)
 - 100 emails/day free
-- Requires phone verification
-- No domain needed
-- Works on Railway
+- Uses HTTP API (works on Railway)
+- Setup: https://sendgrid.com
 
 ### 2. Mailgun
 - 5,000 emails/month free (first 3 months)
-- Requires credit card (not charged)
-- Works on Railway
+- Requires credit card verification
+- Uses HTTP API (works on Railway)
 
-### 3. Elastic Email
-- 100 emails/day free
-- No domain needed
-- Works on Railway
+### 3. Amazon SES
+- 62,000 emails/month free (AWS free tier)
+- Requires AWS account
+- Most scalable option
+
+**Note:** All HTTP-based services work on Railway. Avoid SMTP-only services.
 
 ---
 
 ## Testing Locally
 
-Your `.env` file has 3 options commented:
+Your `.env` file supports 3 options:
 
 ```bash
-# Uncomment ONE of these:
-
-# Option 1: Test with Brevo (recommended)
+# Option 1: Test with Brevo (recommended - same as production)
 BREVO_API_KEY=xkeysib-your_key_here
+EMAIL_FROM="TaskHub <your_email@gmail.com>"
 
-# Option 2: Test with Resend (limited without domain)
-# RESEND_API_KEY=re_your_key_here
-
-# Option 3: Use Gmail SMTP (works locally)
-SMTP_HOST=smtp.gmail.com
-# ... (already configured)
-```
-
-The system automatically uses whichever is uncommented!
-
----
-
-## Problem (Original Issue)
-Connection timeout when sending verification emails on Railway. The error occurs because:
-1. **Railway blocks outbound SMTP connections** on standard ports (25, 587) for security
-2. Gmail SMTP requires stable connections that cloud platforms often restrict
-3. Missing timeout configurations cause the app to hang
-
-## What I Fixed
-
-### 1. Updated `email.service.ts`
-- ✅ Changed default port from 587 to **465 with SSL** (better cloud compatibility)
-- ✅ Added connection, greeting, and socket timeouts (30 seconds each)
-- ✅ Disabled connection pooling to prevent hanging connections
-- ✅ Added debug logging option for troubleshooting
-- ✅ Better error handling
-
-### 2. Updated `verifyEmail.ts`
-- ✅ Added Promise timeout to prevent hanging requests
-- ✅ Detailed error logging with connection details
-- ✅ Specific error messages for timeout and auth failures
-
-### 3. Updated `.env.example`
-- ✅ Added documentation for cloud deployment
-- ✅ Changed recommended port to 465
-- ✅ Added DEBUG_EMAIL option
-
-## Immediate Steps - Update Railway Environment Variables
-
-### Option 1: Try Port 465 with SSL (Quick Fix)
-In your Railway project dashboard, update these variables:
-
-```bash
+# Option 2: Use Gmail SMTP (works locally)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=darekarshivam0@gmail.com
-SMTP_PASSWORD=bmnf bzpl ukoy vtrs
-EMAIL_FROM="TaskHub <darekarshivam0@gmail.com>"
-NODE_ENV=production
-DEBUG_EMAIL=true  # Enable debug logs temporarily
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+EMAIL_FROM="TaskHub <your_email@gmail.com>"
+
+# Option 3: Ethereal (auto-enabled if nothing else configured)
+# No setup needed - creates test account automatically
+# View emails at: https://ethereal.email
 ```
 
-**Then redeploy your backend on Railway.**
+The system automatically uses whichever is configured first (Brevo → SMTP → Ethereal)!
 
-### Check Railway Logs
-After redeploying, check logs for:
-- Connection details being logged
-- Whether port 465 works
-- Any authentication errors
+---
 
-## Long-term Solution: Use Dedicated Email Service
+## Original Problem & Solution
 
-If Gmail SMTP still doesn't work (Railway may block all SMTP), switch to an HTTP-based email service:
+### The Issue
+Connection timeout when sending verification emails on Railway deployment:
+- **Root Cause:** Railway blocks all SMTP ports (25/465/587) for spam prevention
+- **Symptom:** `ETIMEDOUT` errors when trying to send emails via Gmail SMTP
+- **Impact:** User registration/password reset emails not sending in production
 
-### Recommended Services (Free Tiers Available):
+### The Fix
+Implemented 3-provider system with smart fallback:
+1. **Brevo (HTTP API)** - Production solution using axios for direct API calls
+2. **SMTP (Gmail)** - Local development with proper timeout configurations  
+3. **Ethereal** - Automatic testing fallback
 
-#### 1. **Resend** (Easiest, Modern)
-- 3,000 emails/month free
-- Clean API, great for developers
-- Sign up: https://resend.com
+### Key Improvements
+- ✅ Singleton pattern to reuse transporter across app
+- ✅ Connection verification before sending
+- ✅ 30-second timeouts to prevent hanging
+- ✅ Automatic provider detection and fallback
+- ✅ Comprehensive error handling and logging
+- ✅ Uses HTTPS (port 443) in production - never blocked
 
+---
+
+## How to Switch Email Providers
+
+If you need to change providers, just update environment variables:
+
+### Switch to Brevo (Recommended)
 ```bash
-# Railway env
-RESEND_API_KEY=re_your_key_here
+# Railway environment variables
+BREVO_API_KEY=xkeysib-your_key_here
+EMAIL_FROM="TaskHub <your@email.com>"
 ```
 
-#### 2. **SendGrid** (Popular)
-- 100 emails/day free
-- Sign up: https://sendgrid.com
-
+### Switch to SMTP (Local only)
 ```bash
-# Railway env
-SENDGRID_API_KEY=SG.your_key_here
+# .env file
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+EMAIL_FROM="TaskHub <your@email.com>"
 ```
 
-#### 3. **Mailgun**
-- 5,000 emails/month free (first 3 months)
-- Sign up: https://www.mailgun.com
-
-```bash
-# Railway env
-MAILGUN_API_KEY=your_key_here
-MAILGUN_DOMAIN=your_domain
-```
-
-## Option A: Implement Resend (Recommended)
-
-### 1. Install Package
-```bash
-npm install resend
-```
-
-### 2. Create `backend/src/services/email.resend.ts`
-```typescript
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export const sendEmailWithResend = async (
-  to: string,
-  subject: string,
-  html: string
-) => {
-  try {
-    const data = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'TaskHub <onboarding@resend.dev>',
-      to: [to],
-      subject: subject,
-      html: html,
-    });
-
-    console.log('Email sent successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Resend error:', error);
-    throw new Error('Failed to send email with Resend');
-  }
-};
-```
-
-### 3. Update `verifyEmail.ts` to use Resend
-Replace the transporter logic with:
-```typescript
-import { sendEmailWithResend } from './email.resend';
-
-export const sendVerificationEmail = async (
-    email: string,
-    userName: string,
-    verificationToken: string,
-    redirect?: string
-) => {
-    try {
-        const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''}`;
-
-        const html = createVerificationEmailTemplate(userName, verificationLink);
-        
-        await sendEmailWithResend(
-            email,
-            'Verify Your Email Address - TaskHub',
-            html
-        );
-
-        return { success: true };
-
-    } catch (error: any) {
-        console.error("Error while sending verification email", error);
-        throw new ApiError(500, "Failed to send verification email");
-    }
-};
-```
-
-## Option B: Keep Gmail but Try Alternative Ports
-
-If you want to stick with Gmail, try these Railway-specific workarounds:
-
-### 1. Check Railway's Public Networking
-Railway may require you to enable public outbound networking for SMTP.
-
-### 2. Use Gmail's Alternative Settings
-```bash
-SMTP_HOST=smtp-relay.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-```
-
-### 3. Contact Railway Support
-Ask if they allow SMTP on specific ports or if there's a whitelist.
+No code changes needed - the system auto-detects!
 
 ## Testing After Fix
 
@@ -319,27 +217,74 @@ After deploying:
 2. Try user registration
 3. Check logs for "Email sent successfully" or specific errors
 
-## Quick Debug Checklist
+## Production Deployment Checklist (Railway)
 
-- [ ] `SMTP_PORT=465` in Railway env
-- [ ] `SMTP_SECURE=true` in Railway env
-- [ ] `DEBUG_EMAIL=true` temporarily enabled
-- [ ] Gmail App Password is correct (no spaces)
-- [ ] Railway backend redeployed after env changes
-- [ ] Check Railway logs for connection attempts
-- [ ] Verify SMTP credentials work locally with NODE_ENV=production
+- [ ] `BREVO_API_KEY` added to Railway environment variables (starts with `xkeysib-`)
+- [ ] `EMAIL_FROM` configured (e.g., "TaskHub <your@email.com>")
+- [ ] `NODE_ENV=production` set in Railway
+- [ ] `FRONTEND_URL` points to your Vercel deployment
+- [ ] Backend redeployed after env changes
+- [ ] Check Railway logs for: `📧 Using Brevo for email delivery`
+- [ ] Test user registration to verify emails arrive
+
+## Local Development Checklist
+
+- [ ] Either `BREVO_API_KEY` or SMTP credentials in `.env`
+- [ ] `EMAIL_FROM` configured
+- [ ] Run `npm run dev` and check console for email provider detection
+- [ ] Test registration - check console for email logs
+- [ ] If using Ethereal, check https://ethereal.email for test emails
+
+## Troubleshooting
+
+### "Connection timeout" on Railway
+- ✅ **Solution:** Use Brevo (HTTP API), not SMTP
+- Railway blocks all SMTP ports (25/465/587) by design
+
+### "Key not found" with Brevo
+- Check you're using **API key** (starts with `xkeysib-`)
+- NOT SMTP key (starts with `xsmtpsib-`)
+- Get from: https://app.brevo.com/settings/keys/api
+
+### Emails not arriving
+1. Check Railway logs for email provider detection
+2. Verify `EMAIL_FROM` format: `Name <email@domain.com>`
+3. Check spam/junk folder
+4. Verify Brevo API key is valid
 
 ## Still Not Working?
 
-If SMTP remains blocked on Railway:
-1. **Switch to Resend** (5 minutes to implement, works instantly)
-2. **Try Railway's recommended email service** in their docs
-3. **Deploy to alternative platform** (Render, Vercel functions) that allows SMTP
+1. **Check Railway logs** for specific error messages
+2. **Verify environment variables** are set correctly (no typos)
+3. **Test locally first** with same Brevo credentials
+4. **Check Brevo dashboard** (https://app.brevo.com) for:
+   - API key status
+   - Email sending logs
+   - Daily limit (300 emails)
+   - Account verification status
 
-## Need Help?
-The most reliable solution is switching to an HTTP-based email service like Resend. This avoids all SMTP port blocking issues that cloud platforms have.
+## Technical Details
+
+### Why Axios for Brevo?
+- Direct HTTP API calls (no SDK needed)
+- Smaller bundle size
+- Better control over requests
+- Simpler debugging
+
+### Email Service Architecture
+```typescript
+// Singleton pattern - one transporter for entire app
+getTransporter() → initializeTransporter() → {
+  1. Try Brevo (HTTP API via axios)
+  2. Fallback to SMTP (local only)
+  3. Fallback to Ethereal (dev testing)
+}
+```
+
+All email services use `getTransporter()` for consistency.
 
 ---
 
-**Created:** 2026-03-08  
-**Status:** Fixed code, awaiting Railway configuration
+**Last Updated:** March 9, 2026  
+**Status:** ✅ Production-ready with Brevo  
+**Current Providers:** Brevo (production) + SMTP (local) + Ethereal (dev)

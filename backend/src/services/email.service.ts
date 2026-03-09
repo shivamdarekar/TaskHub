@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
-import { createResendTransporter } from "./email.resend";
 import { createBrevoTransporter } from "./email.brevo";
 
 // Singleton transporter to reuse connections
@@ -14,13 +13,7 @@ const initializeTransporter = async () => {
         return createBrevoTransporter();
     }
 
-    // ── Priority 2: Use Resend if API key is available ──
-    if (process.env.RESEND_API_KEY) {
-        console.log('📧 Using Resend for email delivery');
-        return createResendTransporter();
-    }
-
-    // ── Priority 3: Use SMTP for production (may be blocked on cloud platforms) ──
+    // ── Priority 2: Use SMTP for production (may be blocked on cloud platforms) ──
     //for production, use actual smtp credentials
     if (process.env.NODE_ENV === 'production') {
         console.log('📧 Using SMTP for email delivery');
@@ -48,7 +41,7 @@ const initializeTransporter = async () => {
         return nodemailer.createTransport(smtpConfig);
     }
 
-    // ── Priority 4: Use Ethereal for development/testing ──
+    // ── Priority 3: Use Ethereal for development/testing ──
     console.log('📧 Using Ethereal for email testing');
     const account = await nodemailer.createTestAccount();
     
