@@ -59,11 +59,12 @@ const startServer = async () => {
 
     // ── Email (OPTIONAL — warn but continue) ──────────────────────────
     if (emailResult.status === "fulfilled") {
-      const host =
-        process.env.NODE_ENV === "production"
-          ? process.env.SMTP_HOST
-          : "Ethereal (dev)";
-      console.log(`✅ Email service ready (${host})`);
+      const emailProvider = process.env.RESEND_API_KEY 
+        ? "Resend" 
+        : process.env.NODE_ENV === "production" 
+        ? "SMTP" 
+        : "Ethereal (dev)";
+      console.log(`✅ Email service ready (${emailProvider})`);
     } else {
       console.warn("⚠️  Email service failed — email features will not work");
     }
