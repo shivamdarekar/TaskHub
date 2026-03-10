@@ -160,7 +160,9 @@
 - **Rate Limiting**: express-rate-limit
 
 ### DevOps & Tools
-- **Containerization**: Docker
+- **Containerization**: Docker (Multi-stage builds)
+- **CI/CD**: GitHub Actions (Automated Docker builds)
+- **Container Registry**: Docker Hub
 - **Version Control**: Git
 - **Package Manager**: npm
 - **Development**: ts-node-dev (hot reload)
@@ -614,6 +616,95 @@ taskhub/
 - [ ] Frontend URL configured in backend CORS
 - [ ] Backend URL configured in frontend
 - [ ] SMTP settings configured (if not using Brevo)
+
+---
+
+## 🚀 Deployment
+
+### Docker Deployment
+
+TaskHub backend is containerized and production-ready with multi-stage Docker builds.
+
+#### Building Docker Image
+
+```bash
+cd backend
+docker build -t taskhub-backend .
+docker run -p 5000:5000 --env-file .env taskhub-backend
+```
+
+#### Push to Docker Hub
+
+```bash
+docker login
+docker tag taskhub-backend yourusername/taskhub-backend
+docker push yourusername/taskhub-backend
+```
+
+### CI/CD with GitHub Actions
+
+TaskHub uses **GitHub Actions** for automated Docker image building and deployment.
+
+#### What's Automated:
+- ✅ Automatic Docker builds on push to `main`/`develop` branches
+- ✅ Automatic push to Docker Hub
+- ✅ Multi-tag support (branch name, commit SHA, `latest`)
+- ✅ Semantic versioning support (v1.0.0, v1.0.1, v2.0.0)
+- ✅ Docker layer caching for faster builds
+
+#### Setup Steps:
+
+1. **Create Docker Hub Account** (if not exists)
+2. **Generate Docker Hub Access Token**
+   - Go to Docker Hub → Account Settings → Security → New Access Token
+   
+3. **Add GitHub Secrets**
+   - Navigate to: Repository → Settings → Secrets and variables → Actions
+   - Add two secrets:
+     - `DOCKER_USERNAME`: Your Docker Hub username
+     - `DOCKER_TOKEN`: Docker Hub access token
+
+4. **Update Workflow File**
+   - Edit `.github/workflows/backend-docker.yml`
+   - Update `DOCKER_IMAGE_NAME` with your Docker Hub username
+
+5. **Push Changes**
+   ```bash
+   git add .github/workflows/backend-docker.yml
+   git commit -m "Add CI/CD pipeline"
+   git push origin main
+   ```
+
+#### Using Semantic Versioning:
+
+```bash
+# Create and push version tag
+git tag v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+
+# This creates Docker images with tags:
+# - yourusername/taskhub-backend:1.0.0
+# - yourusername/taskhub-backend:1.0
+# - yourusername/taskhub-backend:1
+```
+
+### Deployment Platforms
+
+#### Railway
+1. Create new project on Railway
+2. Deploy from Docker Hub
+3. Set environment variables
+4. Configure custom domain (optional)
+
+#### Render
+1. Create new Web Service
+2. Select "Deploy from Docker Hub"
+3. Image URL: `yourusername/taskhub-backend`
+4. Add environment variables
+5. Deploy
+
+#### AWS/GCP/Azure
+Use the Docker image with your preferred container orchestration (ECS, Cloud Run, AKS)
 
 ---
 

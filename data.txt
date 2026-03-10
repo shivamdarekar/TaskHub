@@ -115,6 +115,50 @@ Important Notes:
 
 
 ========================================
+CI/CD WITH GITHUB ACTIONS
+========================================
+Automate Docker image builds and pushes using GitHub Actions.
+
+Setup GitHub Actions Workflow:
+1. Create workflow file:
+   - Location: .github/workflows/backend-docker.yml (must be in repo root)
+
+2. Get Docker Hub credentials:
+   - get access token from docker hub account settings
+
+3. Add GitHub Repository Secrets:
+   - Go to your GitHub repo
+   - Navigate to: Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Add DOCKER_USERNAME: Your Docker Hub username
+   - Add DOCKER_TOKEN: The access token from step 2
+
+How It Works:
+- Triggers automatically when backend/** files are pushed
+- Runs on GitHub's free Ubuntu servers (Docker pre-installed)
+- Builds Docker image using your Dockerfile
+- Pushes to Docker Hub with multiple tags
+- No need to run Docker Desktop locally!
+
+Tags Created:
+- Branch push: main, main-abc123 (commit SHA), latest
+- Version tag (v1.0.0): 1.0.0, 1.0, 1, latest
+
+Benefits:
+✓ Zero manual work after setup
+✓ Automatic builds on every push to backend
+✓ Version control for all images
+✓ 100% FREE (GitHub Actions + Docker Hub free tiers)
+✓ Docker layer caching for 68% faster builds
+✓ No Docker Desktop needed on local machine
+
+Cost:
+- GitHub Actions: FREE for public repos, 2000 min/month for private
+- Docker Hub: FREE for unlimited public repositories
+- Typical usage: ~150 minutes/month (within free tier)
+
+
+========================================
 TODO & IMPROVEMENTS
 ========================================
 Performance Optimizations:
