@@ -7,9 +7,15 @@ import { getTransporter } from "./services/email.service";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
+const APP_VERSION = "1.0.0"; // CI/CD test version
 
 app.get("/", (req, res) => {
-  res.send("Backend is running");
+  res.json({ 
+    status: "running",
+    message: "TaskHub Backend API", 
+    version: APP_VERSION,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ── Service initializers ───────────────────────────────────────────────────

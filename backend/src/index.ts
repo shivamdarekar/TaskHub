@@ -14,6 +14,8 @@ import webhookRoutes from "./routes/webhook.routes";
 import { errorHandler } from "./middleware/errorHandler";
 import { helmetConfig, generalLimiter, corsOptions } from "./middleware/security";
 
+// Application version for CI/CD tracking
+const APP_VERSION = "1.0.0";
 
 const app = express();
 
