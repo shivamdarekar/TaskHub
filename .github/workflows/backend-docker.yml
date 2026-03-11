@@ -60,15 +60,7 @@ jobs:
 
       - name: Image digest
         run: echo "Image pushed with digest ${{ steps.build.outputs.digest }}"
-
-      - name: Install Railway CLI
+        
+      - name: Wait for Railway to detect new image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-        run: |
-          railway status
-          railway redeploy
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: echo "✅ Docker image pushed! Railway will auto-deploy in 2-5 minutes."
