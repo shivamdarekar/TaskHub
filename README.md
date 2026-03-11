@@ -651,6 +651,16 @@ TaskHub uses **GitHub Actions** for automated Docker image building and deployme
 - ✅ Multi-tag support (branch name, commit SHA, `latest`)
 - ✅ Semantic versioning support (v1.0.0, v1.0.1, v2.0.0)
 - ✅ Docker layer caching for faster builds
+- ✅ Triggers only on `backend/**` file changes
+
+**What Triggers Builds:**
+- Push to `main`/`master`/`develop` branches (if backend files changed)
+- Push version tags (`v*`)
+- Manual workflow dispatch
+
+**Deployment:**
+- Only `main` branch and version tags trigger production deployment
+- `develop` branch builds image but doesn't auto-deploy to production
 
 #### Setup Steps:
 
@@ -666,7 +676,8 @@ TaskHub uses **GitHub Actions** for automated Docker image building and deployme
 
 4. **Update Workflow File**
    - Edit `.github/workflows/backend-docker.yml`
-   - Update `DOCKER_IMAGE_NAME` with your Docker Hub username
+   - Update `DOCKER_IMAGE_NAME` on line 15 with your Docker Hub username
+   - Example: `shivamd01/taskhub-backend`
 
 5. **Push Changes**
    ```bash
@@ -683,23 +694,65 @@ git tag v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
 
 # This creates Docker images with tags:
-# - yourusername/taskhub-backend:1.0.0
-# - yourusername/taskhub-backend:1.0
-# - yourusername/taskhub-backend:1
+# - shivamdarekar/taskhub-backend:1.0.0  (full version)
+# - shivamdarekar/taskhub-backend:1.0    (major.minor, auto-updates)
+# - shivamdarekar/taskhub-backend:1      (major only, auto-updates)
+# - shivamdarekar/taskhub-backend:latest (always latest)
 ```
+
+**Tag Behavior:**
+- `1.0.0` - Immutable, never changes
+- `1.0` - Updates to latest 1.0.x (1.0.1, 1.0.2, etc.)
+- `1` - Updates to latest 1.x.x (1.1.0, 1.2.0, etc.)
+- `latest` - Always points to the most recent release
 
 ### Deployment Platforms
 
-#### Railway
+#### Railway (Recommended)
+
+**Step 1: Push Docker Image** (Automated by GitHub Actions)
+
+**Step 2: Configure Railway Service**
 1. Create new project on Railway
-2. Deploy from Docker Hub
-3. Set environment variables
-4. Configure custom domain (optional)
+2. Add a service → **Deploy Docker Image**
+3. **Image URL**: `shivamdarekar/taskhub-backend:latest`
+4. Click **"Configure auto updates"** or enable **"Watch for image updates"**
+5. Set all environment variables (DATABASE_URL, REDIS_*, RAZORPAY_*, etc.)
+6. Deploy
+
+**Step 3: Continuous Deployment**
+- Railway automatically checks Docker Hub every 2-5 minutes
+- When new image is detected → Auto-deploys
+- Push to `main` branch → Triggers build → Railway deploys (5-7 min total)
+
+**Deployment Flow:**
+```
+git push origin main
+  ↓
+GitHub Actions (3-4 min)
+  ↓
+Docker Hub (new image)
+  ↓
+Railway detects (2-5 min)
+  ↓
+Live! 🚀
+```
+
+**Manual Deploy (If Auto-Deploy Doesn't Work):**
+- Railway Dashboard → Your Service → **Deployments** tab
+- Click **"Redeploy"** button
+- Railway pulls latest image from Docker Hub
+
+**Troubleshooting:**
+- Ensure Railway source is set to **Docker Image** (not GitHub repo)
+- Verify image URL: `shivamdarekar/taskhub-backend:latest`
+- Check "Configure auto updates" or "Watch for updates" is enabled
+- If stuck, manual redeploy always works
 
 #### Render
 1. Create new Web Service
 2. Select "Deploy from Docker Hub"
-3. Image URL: `yourusername/taskhub-backend`
+3. Image URL: `shivamdarekar/taskhub-backend:latest`
 4. Add environment variables
 5. Deploy
 
