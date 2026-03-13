@@ -244,12 +244,7 @@
   .kanban-column {
     flex: 1;
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
-    border-right: 1px solid rgba(59, 130, 246, 0.2);
     position: relative;
-  }
-
-  .kanban-column:last-child {
-    border-right: none;
   }
 
   .kanban-sweep {

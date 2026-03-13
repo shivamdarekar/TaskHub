@@ -16,6 +16,7 @@ import {
 
 import { Loader2 } from "lucide-react";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
+import MobileWarningDialog from "@/components/MobileWarningDialog";
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -99,11 +100,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     }
 
     return (
-        <div className="flex h-screen overflow-hidden bg-gray-50">
-            <WorkspaceSidebar workspaceId={workspaceId as string} />
-            <main className="flex-1 min-w-0 overflow-auto lg:ml-0 pt-16 md:pt-0">
-                {children}
-            </main>
-        </div>
+        <>
+            <MobileWarningDialog />
+            <div className="flex h-screen overflow-hidden bg-gray-50">
+                <WorkspaceSidebar workspaceId={workspaceId as string} />
+                <main className="flex-1 min-w-0 overflow-auto lg:ml-0 pt-16 md:pt-0">
+                    {children}
+                </main>
+            </div>
+        </>
     );
 }

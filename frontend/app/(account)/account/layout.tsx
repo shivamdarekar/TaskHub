@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
 import { Loader2 } from "lucide-react";
 import AccountNavbar from "@/components/account/AccountNavbar";
+import MobileWarningDialog from "@/components/MobileWarningDialog";
 import Script from "next/script";
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="lazyOnload"
       />
+      <MobileWarningDialog />
       <div className="min-h-screen bg-gray-50">
         <AccountNavbar />
         {children}

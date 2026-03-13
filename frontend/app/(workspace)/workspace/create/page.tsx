@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createWorkspace } from "@/redux/slices/workspaceSlice";
 import { Loader2 } from "lucide-react";
 import AuthNavbar from "@/components/AuthNavbar";
+import MobileWarningDialog from "@/components/MobileWarningDialog";
 
 interface CreateWorkspacePayload {
   name: string;
@@ -88,7 +89,9 @@ export default function CreateWorkspace() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
+    <>
+      <MobileWarningDialog />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
       <AuthNavbar />
 
       {/* Animated Background */}
@@ -175,6 +178,6 @@ export default function CreateWorkspace() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
