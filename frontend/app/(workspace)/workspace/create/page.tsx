@@ -178,6 +178,7 @@ export default function CreateWorkspace() {
           </div>
         </div>
       </div>
+      </div>
     </>
   );
 }
