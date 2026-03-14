@@ -5,6 +5,9 @@ import { ApiResponse } from "../utils/apiResponse";
 import prisma from "../config/prisma";
 import crypto from "crypto";
 import { sendWorkspaceInviteEmail } from "../services/inviteMember";
+import { deleteCache } from "../config/cache.service";
+import { CacheKeys } from "../utils/cacheKeys";
+import { invalidateWorkspaceCache } from "../utils/cacheInvalidation";
 
 interface InviteBody{
     email?: string;
@@ -245,6 +248,14 @@ export const joinWorkspaceViaInvite = asyncHandler(async(req:Request, res:Respon
 
         return { member: newMember, alreadyMember: false };
     });
+
+    // Invalidate workspace members and overview cache so the new member appears instantly
+    if (!member.alreadyMember) {
+        await Promise.all([
+            invalidateWorkspaceCache(workspaceId),
+            deleteCache(CacheKeys.userWorkspaces(userId)),
+        ]);
+    }
 
     return res.status(200).json(
         new ApiResponse(

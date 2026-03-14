@@ -47,8 +47,11 @@ export const addComment = asyncHandler(async (req: Request, res: Response) => {
 
     if (!comment) throw new ApiError(403, "Failed to create comment");
 
-    // Invalidate task comments cache
-    await deleteCache(CacheKeys.taskComments(taskId));
+    // Invalidate task comments cache and project overview (comment count changed)
+    await Promise.all([
+        deleteCache(CacheKeys.taskComments(taskId)),
+        deleteCache(CacheKeys.projectOverview(task.projectId)),
+    ]);
 
     //log activity
     logActivity({
@@ -258,6 +261,11 @@ export const updateComment = asyncHandler(async (req: Request, res: Response) =>
         taskId: existingComment.taskId
     }).catch(console.error);
 
+    // Invalidate task comments cache
+    if (existingComment.taskId) {
+        await deleteCache(CacheKeys.taskComments(existingComment.taskId));
+    }
+
     return res.status(200).json(
         new ApiResponse(200, { comment }, "Comment updated successfully")
     );
@@ -296,6 +304,14 @@ export const deleteComment = asyncHandler(async (req: Request, res: Response) =>
         projectId: comment.projectId,
         taskId: comment.taskId
     }).catch(console.error);
+
+    // Invalidate task comments cache and project overview (comment count changed)
+    await Promise.all([
+        comment.taskId
+            ? deleteCache(CacheKeys.taskComments(comment.taskId))
+            : Promise.resolve(),
+        deleteCache(CacheKeys.projectOverview(comment.projectId)),
+    ]);
 
     return res.status(200).json(
         new ApiResponse(200, {}, "Comment deleted successfully")

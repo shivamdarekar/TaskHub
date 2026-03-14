@@ -7,7 +7,7 @@ import { ActivityType, logActivity } from "../services/activityLogger";
 import { ApiResponse } from "../utils/apiResponse";
 import { getCache, setCache, CacheTTL } from "../config/cache.service";
 import { CacheKeys } from "../utils/cacheKeys";
-import { invalidateTaskCache } from "../utils/cacheInvalidation";
+import { invalidateTaskCache, invalidateWorkspaceCache } from "../utils/cacheInvalidation";
 
 interface CreateTaskBody {
     title: string;
@@ -98,7 +98,7 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
                     select: { id: true, name: true, email: true }
                 },
                 project: {
-                    select: { id: true, name: true }
+                    select: { id: true, name: true, workspaceId: true }
                 }
             }
         });
@@ -107,7 +107,10 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
     if (!task) throw new ApiError(403, "Failed to create task");
 
     // Invalidate task and project cache
-    await invalidateTaskCache(task.id, projectId);
+    await Promise.all([
+      invalidateTaskCache(task.id, projectId),
+      invalidateWorkspaceCache(task.project.workspaceId),
+    ]);
 
     logActivity({
         type: ActivityType.TASK_CREATED,
@@ -285,7 +288,8 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
             startDate: true,
             dueDate: true,
             assigneeId: true,
-            projectId: true
+            projectId: true,
+            project: { select: { workspaceId: true } },
         }
     });
 
@@ -337,8 +341,11 @@ export const updateTask = asyncHandler(async (req: Request, res: Response) => {
 
     if (!updatedTask) throw new ApiError(403, "Failed to update task");
 
-    // Invalidate task and project cache
-    await invalidateTaskCache(taskId, existingTask.projectId);
+    // Invalidate task, project, and workspace overview caches
+    await Promise.all([
+        invalidateTaskCache(taskId, existingTask.projectId),
+        invalidateWorkspaceCache(existingTask.project!.workspaceId),
+    ]);
 
     // Log significant changes
     if (updates.status && updates.status !== existingTask.status) {
@@ -390,7 +397,11 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
 
     const taskData = await prisma.task.findUnique({
         where: { id: taskId },
-        select: { title: true, projectId: true },
+        select: {
+          title: true,
+          projectId: true,
+          project: { select: { workspaceId: true } },
+        },
     });
 
     if (!taskData) throw new ApiError(404, "Task not found");
@@ -409,7 +420,10 @@ export const deleteTask = asyncHandler(async (req: Request, res: Response) => {
     });
 
     // Invalidate task and project cache
-    await invalidateTaskCache(taskId, taskData.projectId);
+    await Promise.all([
+      invalidateTaskCache(taskId, taskData.projectId),
+      invalidateWorkspaceCache(taskData.project!.workspaceId),
+    ]);
 
     return res.status(200).json(
         new ApiResponse(200, {}, "Task deleted successfully")
@@ -500,7 +514,14 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
 
     const taskData = await prisma.task.findUnique({
         where: { id: taskId },
-        select: { id: true, title:true, status: true, position: true, projectId: true }
+        select: {
+            id: true,
+            title: true,
+            status: true,
+            position: true,
+            projectId: true,
+            project: { select: { workspaceId: true } },
+        }
     });
 
     if (!taskData) throw new ApiError(404, "Task not found");
@@ -537,6 +558,12 @@ export const moveTaskKanban = asyncHandler(async (req: Request, res: Response) =
             }
         });
     });
+
+    // Invalidate kanban, calendar, project overview, task caches, and workspace overview
+    await Promise.all([
+        invalidateTaskCache(taskId, taskData.projectId),
+        invalidateWorkspaceCache(taskData.project!.workspaceId),
+    ]);
 
     if (oldStatus !== toStatus) {
         logActivity({

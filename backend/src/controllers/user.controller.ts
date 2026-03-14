@@ -233,6 +233,9 @@ const toggle2FA = asyncHandler(async (req: Request<{}, {}, Toggle2FABody>, res: 
     data: { is2FAenabled }
   });
 
+  // Invalidate user cache so updated 2FA status is served immediately
+  await invalidateUserCache(userId);
+
   return res.status(200).json(
     new ApiResponse(200, { is2FAenabled }, `Two-Factor authentication ${is2FAenabled ? 'enabled' : 'disabled'} successfull`)
   );
@@ -555,12 +558,6 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!user) throw new ApiError(401, "Error in user logout process ");
-
-  // Blacklist the access token for remaining TTL (1 day = 86400 seconds)
-  if (jti) {
-    const { blacklist } = await import("../config/redis.js");
-    await blacklist(jti, 86400); // Blacklist for 24 hours (access token expiry)
-  }
 
   const options: CookieOptions = {
     httpOnly: true,

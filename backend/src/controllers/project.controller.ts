@@ -4,9 +4,9 @@ import { ApiError } from "../utils/apiError";
 import { ApiResponse } from "../utils/apiResponse";
 import { asyncHandler } from "../utils/asynchandler";
 import { Request, Response } from "express";
-import { getCache, setCache, CacheTTL, deleteCache } from "../config/cache.service";
+import { getCache, setCache, CacheTTL } from "../config/cache.service";
 import { CacheKeys } from "../utils/cacheKeys";
-import { invalidateProjectCache } from "../utils/cacheInvalidation";
+import { invalidateProjectCache, invalidateWorkspaceCache } from "../utils/cacheInvalidation";
 
 interface ProjectBody {
     name: string;
@@ -98,8 +98,8 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!project) throw new ApiError(500, "Error while creating project")
 
-    // Invalidate workspace projects cache
-    await deleteCache(CacheKeys.workspaceProjects(workspaceId));
+    // Invalidate workspace-level caches (includes all per-user project/overview variants)
+    await invalidateWorkspaceCache(workspaceId);
 
     //log activity (async, doesn't block response if it fails)
     logActivity({
@@ -164,7 +164,7 @@ export const getWorkspaceProjects = asyncHandler(
         if (!userId) throw new ApiError(400, "Not Authorized");
 
         // Try cache first
-        const cacheKey = CacheKeys.workspaceProjects(workspaceId);
+        const cacheKey = CacheKeys.workspaceProjects(workspaceId, userId);
         const cachedProjects = await getCache(cacheKey);
         
         if (cachedProjects) {
@@ -406,8 +406,11 @@ export const updateProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!updatedProject) throw new ApiError(401, "Failed to update project");
 
-    // Invalidate project cache
-    await invalidateProjectCache(projectId);
+    // Invalidate project cache and workspace-level lists/overviews.
+    await Promise.all([
+        invalidateProjectCache(projectId),
+        invalidateWorkspaceCache(project.workspaceId),
+    ]);
 
     //log activity (async, doesn't block response if it fails)
     const changes: string[] = [];
@@ -450,8 +453,11 @@ export const deleteProject = asyncHandler(async (req: Request, res: Response) =>
 
     if (!deleteProject) throw new ApiError(403, "Error while deleting the Project");
 
-    // Invalidate project cache
-    await invalidateProjectCache(projectId);
+    // Invalidate project cache and workspace-level lists/overviews.
+    await Promise.all([
+        invalidateProjectCache(projectId),
+        invalidateWorkspaceCache(project.workspaceId),
+    ]);
 
     return res.status(200)
         .json(
@@ -698,6 +704,12 @@ export const addProjectMembers = asyncHandler(async (req: Request, res: Response
 
     await Promise.all(activityPromises);
 
+    // Invalidate project cache and workspace-level lists/overviews so member dashboards refresh correctly.
+    await Promise.all([
+        invalidateProjectCache(projectId),
+        invalidateWorkspaceCache(project.workspaceId),
+    ]);
+
     return res.status(200).json(
         new ApiResponse(
             200,
@@ -772,6 +784,12 @@ export const removeProjectMember = asyncHandler(async (req: Request, res: Respon
             id: projectAccess.id
         }
     });
+
+    // Invalidate project cache and workspace-level lists/overviews so member dashboards refresh correctly.
+    await Promise.all([
+        invalidateProjectCache(projectId),
+        invalidateWorkspaceCache(project.workspaceId),
+    ]);
 
     // Log activity
     logActivity({

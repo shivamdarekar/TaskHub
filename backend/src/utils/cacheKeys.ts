@@ -14,9 +14,15 @@ export const CacheKeys = {
   // Workspace Related
   // ========================================
   workspace: (workspaceId: string) => `workspace:${workspaceId}`,
-  workspaceOverview: (workspaceId: string) => `workspace:${workspaceId}:overview`,
+  workspaceOverview: (workspaceId: string, userId?: string) =>
+    userId
+      ? `workspace:${workspaceId}:overview:user:${userId}`
+      : `workspace:${workspaceId}:overview`,
   workspaceMembers: (workspaceId: string) => `workspace:${workspaceId}:members`,
-  workspaceProjects: (workspaceId: string) => `workspace:${workspaceId}:projects`,
+  workspaceProjects: (workspaceId: string, userId?: string) =>
+    userId
+      ? `workspace:${workspaceId}:projects:user:${userId}`
+      : `workspace:${workspaceId}:projects`,
   
   // ========================================
   // Project Related

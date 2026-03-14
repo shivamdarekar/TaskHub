@@ -5,6 +5,7 @@ import prisma from "../config/prisma";
 import razorpayService, { PLAN_LIMITS } from "../services/razorpay.service";
 import { SubscriptionStatus, PaymentStatus } from "@prisma/client";
 import { sendPaymentFailedEmail, sendSubscriptionCancelledEmail } from "../services/subscriptionEmail";
+import { invalidateSubscriptionCache } from "../utils/cacheInvalidation";
 
 export const handleRazorpayWebhook = asyncHandler(async (req: Request, res: Response) => {
   const signature = req.headers["x-razorpay-signature"] as string;
@@ -131,7 +132,10 @@ async function handleSubscriptionCancelled(subscription: any) {
       },
     });
 
-    // Send cancellation email (async, don't block)
+  // Invalidate subscription cache so downgraded plan is served immediately
+  await invalidateSubscriptionCache(sub.userId);
+
+  // Send cancellation email (async, don't block)
     if (sub.user) {
       console.log(`📧 Sending cancellation email to ${sub.user.email}`);
       sendSubscriptionCancelledEmail(

@@ -313,6 +313,9 @@ export const verifyPaymentAndUpgrade = asyncHandler(async (req: Request, res: Re
     currentPeriodEnd
   ).catch(err => console.error('Email send failed:', err));
 
+  // Invalidate subscription cache so upgraded plan is served immediately
+  await invalidateSubscriptionCache(userId);
+
   return res.status(200).json(
     new ApiResponse(
       200,
@@ -358,6 +361,9 @@ export const cancelSubscription = asyncHandler(async (req: Request, res: Respons
     data: { cancelAtPeriodEnd: true },
   });
 
+  // Invalidate subscription cache so cancellation status is served immediately
+  await invalidateSubscriptionCache(userId);
+
   // Send cancellation email immediately
   const expiryDate = updatedSubscription.currentPeriodEnd || new Date();
   sendSubscriptionCancelledEmail(
@@ -398,6 +404,9 @@ export const reactivateSubscription = asyncHandler(async (req: Request, res: Res
     where: { userId },
     data: { cancelAtPeriodEnd: false },
   });
+
+  // Invalidate subscription cache so reactivated status is served immediately
+  await invalidateSubscriptionCache(userId);
 
   return res.status(200).json(
     new ApiResponse(

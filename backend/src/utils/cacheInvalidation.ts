@@ -22,6 +22,9 @@ export const invalidateWorkspaceCache = async (workspaceId: string): Promise<voi
     deleteCache(CacheKeys.workspaceOverview(workspaceId)),
     deleteCache(CacheKeys.workspaceMembers(workspaceId)),
     deleteCache(CacheKeys.workspaceProjects(workspaceId)),
+    // User-scoped workspace caches (overview/projects) must be cleared for all members.
+    deleteCachePattern(`workspace:${workspaceId}:overview:user:*`),
+    deleteCachePattern(`workspace:${workspaceId}:projects:user:*`),
   ]);
 };
 

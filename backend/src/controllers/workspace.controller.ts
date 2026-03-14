@@ -239,7 +239,7 @@ const getWorkspaceOverview = asyncHandler(async (req: Request, res: Response) =>
     if (!workspaceId) throw new ApiError(400, "Workspace id is required");
 
     // Try cache first (5 minutes TTL for this high-query endpoint)
-    const cacheKey = CacheKeys.workspaceOverview(workspaceId);
+    const cacheKey = CacheKeys.workspaceOverview(workspaceId, userId);
     const cachedOverview = await getCache(cacheKey);
     
     if (cachedOverview) {
@@ -558,7 +558,10 @@ const deleteWorkspace = asyncHandler(async (req: Request, res: Response) => {
     if (!deleteWorkspace) throw new ApiError(500, "Failed to delete workspace");
 
     // Invalidate workspace cache
-    await invalidateWorkspaceCache(workspaceId);
+    await Promise.all([
+        invalidateWorkspaceCache(workspaceId),
+        deleteCache(CacheKeys.userWorkspaces(userId)),
+    ]);
 
     return res.status(200).json(
         new ApiResponse(200, {}, "Workspace deleted successfully")
@@ -611,10 +614,23 @@ const removeMember = asyncHandler(async (req: Request, res: Response) => {
         throw new ApiError(403, "Cannot remove yourself from workspace");
     }
 
+    // Get all projects this member had access to before deleting (for cache invalidation)
+    const memberProjectAccess = await prisma.projectAccess.findMany({
+        where: { workspaceMemberId: memberId },
+        select: { projectId: true }
+    });
+
     // Delete member (cascades to ProjectAccess)
     await prisma.workspaceMembers.delete({
-        where: { id: memberId }
+            where: { id: memberId }
     });
+
+    // Invalidate workspace cache, removed member's workspace list, and all affected project member caches
+    await Promise.all([
+        invalidateWorkspaceCache(workspaceId),
+        deleteCache(CacheKeys.userWorkspaces(member.userId)),
+        ...memberProjectAccess.map(pa => deleteCache(CacheKeys.projectMembers(pa.projectId))),
+    ]);
 
     return res.status(200).json(
         new ApiResponse(
