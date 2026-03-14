@@ -11,7 +11,6 @@ import RecentComments from "@/components/workspace/project/RecentComments";
 import {
   fetchProjectOverview,
   fetchRecentProjectActivities,
-  fetchProjectMembers,
 } from "@/redux/slices/projectSlice";
 import { getRecentProjectComments } from "@/redux/slices/commentSlice";
 
@@ -31,18 +30,17 @@ export default function ProjectDashboardPage() {
   const { recentComments, recentCommentsLoading } = useAppSelector((state) => state.comment);
 
   useEffect(() => {
-    if (projectId) {
-      dispatch(fetchProjectOverview(projectId));
-      dispatch(fetchRecentProjectActivities({ projectId, limit: 15 }));
-      dispatch(getRecentProjectComments({ projectId, limit: 15 }));
-      dispatch(fetchProjectMembers(projectId));
-    }
-  }, [projectId, dispatch]);
+    if (!projectId) return;
+    dispatch(fetchProjectOverview(projectId));
+    dispatch(fetchRecentProjectActivities({ projectId, limit: 15 }));
+    dispatch(getRecentProjectComments({ projectId, limit: 15 }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
         {/* STATS CARDS */}
-        <div className="animate-in slide-in-from-bottom-4 duration-700 delay-300">
+        <div>
           <ProjectStatsCards
             stats={
               overview
@@ -61,7 +59,7 @@ export default function ProjectDashboardPage() {
 
 
         {/* MAIN CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* TASK DISTRIBUTION */}
           <div className="lg:col-span-1 h-[650px]">
             <TaskDistributionChart

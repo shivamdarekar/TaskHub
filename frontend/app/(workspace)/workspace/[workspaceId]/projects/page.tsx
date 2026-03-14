@@ -20,12 +20,12 @@ export default function ProjectsListPage() {
   const { projects, projectsLoading, error } = useAppSelector((state) => state.project);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // Fetch projects when workspaceId changes
+  // Fetch projects only if not already loaded for this workspace
   useEffect(() => {
-    if (workspaceId) {
+    if (workspaceId && projects.length === 0 && !projectsLoading) {
       dispatch(fetchWorkspaceProjects(workspaceId)).unwrap();
     }
-  }, [workspaceId, dispatch]);
+  }, [workspaceId, dispatch, projects.length, projectsLoading]);
 
   const getProjectColor = (name: string) => {
     const colors = [
@@ -104,7 +104,7 @@ export default function ProjectsListPage() {
       {/* MAIN CONTENT */}
       <div className="p-4 md:p-6 lg:p-8">
         {projects.length === 0 ? (
-          <div className="text-center py-12 animate-in slide-in-from-bottom-4 duration-700 delay-300">
+          <div className="text-center py-12">
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 bg-gray-100 rounded-full">
                 <FolderKanban className="h-8 w-8 text-gray-400" />
@@ -125,7 +125,7 @@ export default function ProjectsListPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project, index) => (
               <Card 
                 key={project.id}

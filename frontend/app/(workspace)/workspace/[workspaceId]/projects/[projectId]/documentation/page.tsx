@@ -14,8 +14,10 @@ export default function DocumentationPage() {
   const workspaceId = params.workspaceId as string;
   
   useEffect(() => {
-    dispatch(fetchProjectBasicInfo(projectId));
-  }, [dispatch, projectId]);
+    if (projectId && !currentProject && !currentProjectLoading) {
+      dispatch(fetchProjectBasicInfo(projectId));
+    }
+  }, [dispatch, projectId, currentProject, currentProjectLoading]);
 
   if (currentProjectLoading || !currentProject) {
     return (

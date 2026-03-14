@@ -31,7 +31,15 @@ export default function RegisterPage() {
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const hasRedirectedRef = useRef(false);
+
+  const trimmedEmail = formData.email.trim();
+  const shouldShowResendVerification = Boolean(
+    trimmedEmail &&
+    error &&
+    error.toLowerCase().includes("already exists")
+  );
 
   useEffect(() => {
   if (isAuthenticated && !hasRedirectedRef.current) {
@@ -111,6 +119,7 @@ export default function RegisterPage() {
         redirect: redirect || undefined 
       })).unwrap();
 
+      setRegisteredEmail(formData.email.trim());
       setIsSuccess(true);
       setFormData({
         name: "",
@@ -156,9 +165,24 @@ export default function RegisterPage() {
           {isSuccess && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center animate-fade-in-up">
               <CheckCircle className="h-5 w-5 text-green-600 mr-3 flex-shrink-0" />
-              <p className="text-green-900 text-sm font-medium">
-                Account created! Please check your email for verification
-              </p>
+              <div className="text-sm text-green-900">
+                <p className="font-medium">
+                  Account created! Please check your email for verification.
+                </p>
+                <Link
+                  href={`/resend-verification?${new URLSearchParams(
+                    Object.fromEntries(
+                      [
+                        ["email", registeredEmail],
+                        ["redirect", redirect],
+                      ].filter((entry): entry is [string, string] => Boolean(entry[1]))
+                    )
+                  ).toString()}`}
+                  className="mt-2 inline-block font-semibold text-green-700 underline-offset-4 hover:underline"
+                >
+                  Need a new link?
+                </Link>
+              </div>
             </div>
           )}
           
@@ -166,6 +190,22 @@ export default function RegisterPage() {
           {(error || localErrors.form) && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-shake">
               <p className="text-red-800 text-sm">{error || localErrors.form}</p>
+              {shouldShowResendVerification && (
+                <Link
+                  href={`/resend-verification?${new URLSearchParams(
+                    Object.fromEntries(
+                      [
+                        ["email", trimmedEmail],
+                        ["redirect", redirect],
+                      ].filter((entry): entry is [string, string] => Boolean(entry[1]))
+                    )
+                  ).toString()}`}
+                  className="mt-2 inline-block text-sm font-semibold text-red-700 underline-offset-4 hover:underline"
+                  // trimmedEmail is correct here — form not cleared on error
+                >
+                  Resend verification instead
+                </Link>
+              )}
             </div>
           )}
 

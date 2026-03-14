@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
     fetchWorkspaceById,
     fetchUserWorkspaces,
+    fetchWorkspaceOverview,
     clearWorkspaceData,
 } from "@/redux/slices/workspaceSlice";
 
@@ -75,10 +76,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             dispatch(clearWorkspaceData());
             dispatch(clearProjects());
 
-            // Fetch all at once
+            // Fetch all at once — overview included so overviewLoading is true before page renders
             Promise.all([
                 dispatch(fetchWorkspaceById(workspaceId)).unwrap(),
                 dispatch(fetchWorkspaceProjects(workspaceId)).unwrap(),
+                dispatch(fetchWorkspaceOverview(workspaceId)).unwrap(),
             ]);
 
         }

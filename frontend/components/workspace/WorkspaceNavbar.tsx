@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { clearUser, logoutUser } from "@/redux/slices/authSlice";
 import { resetAppState } from "@/redux/actions/appActions";
 import { persistor } from "@/redux/store";
+import { toast } from "sonner";
 
 interface WorkspaceNavbarProps {
   title: string;
@@ -33,11 +34,7 @@ export default function WorkspaceNavbar({ title, subtitle, actions }: WorkspaceN
       persistor.purge();
       router.push("/");
     } catch {
-      // Logout failed, clear state anyway
-      dispatch(clearUser());
-      dispatch(resetAppState());
-      persistor.purge();
-      router.push("/login");
+      toast.error("Failed to logout. Please try again.");
     }
   };
 

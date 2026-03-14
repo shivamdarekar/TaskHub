@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axiosInstance from "../api/axiosInstance";
 import { handleAxiosError } from "../api/axiosError";
+import { resetAppState } from "../actions/appActions";
 
 interface User {
   id: string;
@@ -31,6 +32,10 @@ interface RegisterData {
   email: string;
   password: string;
   redirect?: string; // Optional redirect for invite flow
+}
+
+interface ResendVerificationData {
+  email: string;
 }
 
 interface Verify2FAData {
@@ -130,6 +135,20 @@ export const registerUser = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(handleAxiosError(error, "Registration failed"));
+    }
+  }
+);
+
+export const resendVerificationEmail = createAsyncThunk(
+  "auth/resendVerificationEmail",
+  async ({ email }: ResendVerificationData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/api/v1/users/resend-verifylink", {
+        email,
+      });
+      return response.data.message;
+    } catch (error: unknown) {
+      return rejectWithValue(handleAxiosError(error, "Failed to resend verification email"));
     }
   }
 );
@@ -365,6 +384,20 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
+    builder
+      .addCase(resendVerificationEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resendVerificationEmail.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(resendVerificationEmail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
     // Logout user
     builder
       .addCase(logoutUser.fulfilled, (state) => {
@@ -501,6 +534,12 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       });
+
+    // Reset all auth data on logout
+    builder.addCase(resetAppState, () => ({
+      ...initialState,
+      authLoading: false, // Don't show spinner after logout
+    }));
   }
 });
 

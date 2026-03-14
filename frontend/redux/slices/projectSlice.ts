@@ -355,6 +355,10 @@ const projectSlice = createSlice({
         clearProjects: (state) => {
             state.projects = [];
             state.error = null;
+        },
+        clearProjectMembers: (state) => {
+            state.members = [];
+            state.availableMembers = [];
         }
     },
     extraReducers: (builder) => {
@@ -611,6 +615,6 @@ const projectSlice = createSlice({
     }
 });
 
-export const { clearError, clearCurrentProject, clearProjects } = projectSlice.actions;
+export const { clearError, clearCurrentProject, clearProjects, clearProjectMembers } = projectSlice.actions;
 
 export default projectSlice.reducer;

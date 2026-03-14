@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { removeMember } from "@/redux/slices/workspaceSlice";
+import { clearProjectMembers } from "@/redux/slices/projectSlice";
 import { toast } from "sonner";
 
 interface Member {
@@ -55,6 +56,7 @@ export default function RemoveMemberDialog({
         memberId: member.id 
       })).unwrap();
       
+      dispatch(clearProjectMembers());
       toast.success(`${member.user.name} has been removed from the workspace`);
       onOpenChange(false);
     } catch (error) {

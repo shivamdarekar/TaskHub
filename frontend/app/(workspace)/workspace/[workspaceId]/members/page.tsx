@@ -43,10 +43,10 @@ export default function MembersPage() {
   const workspaceOwnerId = currentWorkspace?.ownerId || overview?.workspace.owner.id;
 
   useEffect(() => {
-    if (workspaceId) {
+    if (workspaceId && members.length === 0 && !membersLoading) {
       dispatch(fetchWorkspaceMembers(workspaceId));
     }
-  }, [workspaceId, dispatch]);
+  }, [workspaceId, dispatch, members.length, membersLoading]);
 
   // Loading state
   if (membersLoading && members.length === 0) {

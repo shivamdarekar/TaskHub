@@ -86,7 +86,8 @@ axiosInstance.interceptors.response.use(
           if (!isPublicPage && !currentPath.startsWith('/login') && 
               !currentPath.startsWith('/register') && 
               !currentPath.startsWith('/forgot-password') &&
-              !currentPath.startsWith('/verify-email')) {
+              !currentPath.startsWith('/verify-email') &&
+              !currentPath.startsWith('/resend-verification')) {
             window.location.href = "/login";
           }
         }

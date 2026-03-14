@@ -44,7 +44,7 @@ export default function WorkspaceSettingsPage() {
   const dispatch = useAppDispatch();
   const workspaceId = params.workspaceId as string;
 
-  const { currentWorkspace, currentWorkspaceLoading, error, members } = useAppSelector(
+  const { currentWorkspace, currentWorkspaceLoading, error, members, membersLoading } = useAppSelector(
     (state) => state.workspace
   );
   const { user } = useAppSelector((state) => state.auth);
@@ -63,10 +63,10 @@ export default function WorkspaceSettingsPage() {
 
   useEffect(() => {
     if (workspaceId) {
-      dispatch(fetchWorkspaceById(workspaceId));
-      dispatch(fetchWorkspaceMembers(workspaceId));
+      if (!currentWorkspace && !currentWorkspaceLoading) dispatch(fetchWorkspaceById(workspaceId));
+      if (members.length === 0 && !membersLoading) dispatch(fetchWorkspaceMembers(workspaceId));
     }
-  }, [workspaceId, dispatch]);
+  }, [workspaceId, dispatch, currentWorkspace, currentWorkspaceLoading, members.length, membersLoading]);
 
   useEffect(() => {
     if (currentWorkspace) {
