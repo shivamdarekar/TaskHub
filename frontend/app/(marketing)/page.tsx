@@ -111,11 +111,15 @@ export default function Home() {
                       Start for Free
                     </Button>
                   </Link>
-                  <Link href="/demo">
+                  <a
+                    href="https://www.linkedin.com/posts/shivam-darekar-b61636240_fullstackdevelopment-softwareengineering-activity-7438635408906690560-DqEt"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Button size="lg" variant="outline" className="border-gray-300 hover:border-blue-600 hover:text-blue-600 transition-all">
                       Watch Demo
                     </Button>
-                  </Link>
+                  </a>
                 </>
               )}
             </div>
@@ -373,7 +377,7 @@ export default function Home() {
                 <div className="bg-white p-6 rounded-xl shadow-md">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-gray-900">User Satisfaction</span>
-                    <span className="text-green-600 font-bold">98%</span>
+                    <span className="text-green-700 font-bold">98%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div className="bg-green-600 h-2 rounded-full" style={{width: '98%'}}></div>
