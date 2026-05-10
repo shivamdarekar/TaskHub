@@ -27,7 +27,7 @@ import { PLAN_PRICES } from "@/lib/constants";
 export default function Home() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isAuthenticated, authLoading, user } = useAppSelector(
+  const { isAuthenticated, user } = useAppSelector(
     (state) => state.auth
   );
   const {workspaces,loading} = useAppSelector((state) => state.workspace);
@@ -48,15 +48,6 @@ export default function Home() {
       router.push('/workspace/create');
     }
   };
-
-  if (authLoading) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <Loader2 className="h-8 w-8 animate-spin text-gray-500" aria-hidden="true" />
-      <span className="sr-only" role="status" aria-live="polite">Loading</span>
-    </div>
-  );
-}
 
   return (
     <div className="flex flex-col min-h-screen bg-white">

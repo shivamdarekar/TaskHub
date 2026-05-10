@@ -51,7 +51,7 @@ export const authLimiter = rateLimit({
 // Rate limiter for password reset attempts
 export const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Max 5 password reset attempts per hour (increased for flexibility)
+  max: 7, // Max 5 password reset attempts per hour (increased for flexibility)
   message: "Too many password reset attempts, please try again after an hour.",
   standardHeaders: true,
   legacyHeaders: false,

@@ -1,6 +1,6 @@
 import app from "./index";
 import dotenv from "dotenv";
-import { redis, connectRedis, disconnectRedis } from "./config/redis";
+import { redis, connectRedis, disconnectRedis, isRedisAvailable } from "./config/redis";
 import prisma from "./config/prisma";
 import { getTransporter } from "./services/email.service";
 
@@ -31,7 +31,7 @@ const connectEmail = async (): Promise<void> => {
 
 const checkRazorpay = (): void => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    throw new Error("RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing");
+    console.warn("⚠️ Razorpay credentials missing — payment features disabled");
   }
 };
 
@@ -39,6 +39,8 @@ const checkRazorpay = (): void => {
 
 const startServer = async () => {
   try {
+    console.log("🔄 Starting services...");
+
     // Parallel initialization — all services start at the same time
     const [dbResult, redisResult, emailResult, razorpayResult] =
       await Promise.allSettled([
@@ -47,6 +49,8 @@ const startServer = async () => {
         connectEmail(),
         Promise.resolve(checkRazorpay()),
       ]);
+
+    console.log("✅ All services initialized\n");
 
     // ── Database (REQUIRED — exit if down) ────────────────────────────
     if (dbResult.status === "fulfilled") {
@@ -65,10 +69,10 @@ const startServer = async () => {
 
     // ── Email (OPTIONAL — warn but continue) ──────────────────────────
     if (emailResult.status === "fulfilled") {
-      const emailProvider = process.env.BREVO_API_KEY 
-        ? "Brevo" 
-        : process.env.NODE_ENV === "production" 
-        ? "SMTP" 
+      const emailProvider = process.env.BREVO_API_KEY
+        ? "Brevo"
+        : process.env.NODE_ENV === "production"
+        ? "SMTP"
         : "Ethereal (dev)";
       console.log(`✅ Email service ready (${emailProvider})`);
     } else {
@@ -83,6 +87,7 @@ const startServer = async () => {
     }
 
     // ── Start Express server ───────────────────────────────────────────
+    console.log("\n🚀 Starting Express server...\n");
     const BASE_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`;
 
     const server = app.listen(PORT, () => {
@@ -93,7 +98,7 @@ const startServer = async () => {
 🔗 Server      : ${BASE_URL}
 ❤️  Health      : ${BASE_URL}/
 📚 API Base    : ${BASE_URL}/api/v1
-🔴 Redis       : ${redis.isOpen ? "Connected" : "Disabled"}
+🔴 Redis       : ${isRedisAvailable ? "Connected" : "Fallback Cache"}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             `);
     });
@@ -120,7 +125,8 @@ const startServer = async () => {
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   } catch (error) {
-    console.error("❌ Server startup failed:", error);
+    console.error("❌ Server startup failed:");
+    console.error(error);
     process.exit(1);
   }
 };
